@@ -1,0 +1,17 @@
+﻿
+
+Jag valde att prova att använda Spectre.Console för att skapa och hantera GUI lite lättare. 
+Lärdomen av det är att det är dumt att göra det när man i stort sett skrivit klart layouten för programmet. 
+Det ställde till det mer än väntat så därför backade jag till att bara använda mer simpla basfunktioner och inte implementerat spectre.console i alla menyer. 
+Det är dock en intressant och bra lösning för att skapa GUI i C# och jag kommer nog att använda det i framtida projekt.
+Syntaxen när man skriver påminner lite om lambda och även en blandning av css/html för att styla text.
+Länk till sidan för nuget och info: 
+https://spectreconsole.net/  
+
+Jag har även lagt till BCrypt.Net-next för att hantera hashning av lösenord som görs vid registrering och inloggning.
+https://learn.microsoft.com/en-us/answers/questions/939712/how-do-i-check-the-password-entered-by-the-user-bc?page=2#answers
+
+Programmet är skrivet Async hela vägen. Det kan finnas någon synkron metod som jag missat. Alternativt någon metod som inte har en await och därför är synkron. 
+Databasen är uppbyggt med Code-First utan virtual för att hoppa över lazy loading.
+
+
