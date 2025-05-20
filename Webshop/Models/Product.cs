@@ -15,6 +15,8 @@ public class Product
 
     public string? Name { get; set; }
     public string? Description { get; set; }
+
+   
     public decimal Price { get; set; }
     public int Stock { get; set; }
     public string SKU { get; set; }
@@ -25,10 +27,10 @@ public class Product
     public int QuantitySold { get; set; }
 
     public int ProductCategoryId { get; set; } 
-    public ProductCategory Category { get; set; }
+    public virtual ProductCategory Category { get; set; }
     public int SupplierId { get; set; }
-    public Supplier Supplier { get; set; }
+    public virtual Supplier Supplier { get; set; }
    
-    public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
-    public ICollection<OrderItem> Orders { get; set; } = new List<OrderItem>();
+    public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
+    public virtual ICollection<OrderItem> Orders { get; set; } = new List<OrderItem>();
 }

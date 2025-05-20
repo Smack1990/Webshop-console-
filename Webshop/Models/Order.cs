@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -9,15 +10,15 @@ namespace Webshop.Models;
 public class Order
 {
    public int Id { get; set; }
-    public DateTime OrderDate { get; set; } = DateTime.UtcNow;
+    public DateTime OrderDate { get; set; } = DateTime.Now;
     public decimal TotalAmount { get; set; }
     
     public string ShippingAddress { get; set; } = string.Empty;
-    public int zipCode { get; set; }
+    public int ZipCode { get; set; }
     public string City { get; set; }
-    public string invoiceAddress { get; set; } = string.Empty;
-    public int invoicezipCode { get; set; }
-    public string invoiceCity { get; set; }
+    public string InvoiceAddress { get; set; } = string.Empty;
+    public int InvoiceZipCode { get; set; }
+    public string InvoiceCity { get; set; }
 
 
     public string PaymentInfo { get; set; }
@@ -29,8 +30,9 @@ public class Order
     public decimal FreightPrice { get; set; }
     public string PhoneNumber { get; set; }
 
-    public Customer Customer { get; set; }
-    public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+
+    public virtual Customer Customer { get; set; }
+    public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
 
 

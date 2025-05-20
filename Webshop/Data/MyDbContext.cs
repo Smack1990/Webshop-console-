@@ -9,6 +9,10 @@ using Webshop.Models;
 namespace Webshop.Data;
 public class MyDbContext : DbContext
 {
+    public MyDbContext(DbContextOptions<MyDbContext> options) :base(options)
+    {
+        
+    }
     public DbSet<Customer> Customers { get; set; }
     public DbSet<Product> Products { get; set; }
     public DbSet<ProductCategory> ProductCategories { get; set; }
@@ -20,6 +24,9 @@ public class MyDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
+        if(!optionsBuilder.IsConfigured)
+        {
+           
         optionsBuilder.UseSqlServer(@"Data Source=(localdb)\MSSQLLocalDB;
   Initial Catalog=WebShop1;
   Integrated Security=True;
@@ -30,6 +37,7 @@ public class MyDbContext : DbContext
   Application Intent=ReadWrite;
   Multi Subnet Failover=False");
     }
+        }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Product>()

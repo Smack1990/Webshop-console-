@@ -21,6 +21,6 @@ public class Customer
     public DateTime RegistrationDate { get; set; } = DateTime.Now;
     public int Sitevisit { get; set; }
 
-    public Cart Cart { get; set; }
-    public ICollection<Order> Orders { get; set; } = new List<Order>();
+    public virtual Cart Cart { get; set; }
+    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 }

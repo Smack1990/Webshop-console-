@@ -10,7 +10,7 @@ namespace Webshop.Data
     using System.Threading.Tasks;
     using Webshop.Models;
 
-    public static class TestDataSeeder
+    public static class DataSeeder
     {
         public static async Task SeedTestDataAsync(MyDbContext context)
         {
@@ -27,12 +27,12 @@ namespace Webshop.Data
                     IsAdmin = true,
                     Cart = new Cart()
                 };
-                // Set a default password ("admin123")
+                
                 admin.Password = BCrypt.Net.BCrypt.HashPassword("admin");
                 context.Customers.Add(admin);
                 await context.SaveChangesAsync();
             }
-            // Seed Categories individually
+            
             var categoriesToSeed = new[]
             {
                 new ProductCategory { CategoryName = "Bikes", Description = "All kinds of bicycles" },
@@ -70,7 +70,7 @@ namespace Webshop.Data
             }
             await context.SaveChangesAsync();
 
-            // Seed Products individually
+          
             var bikesCat = context.ProductCategories.First(c => c.CategoryName == "Bikes");
             var toolsCat = context.ProductCategories.First(c => c.CategoryName == "Tools");
             var compsCat = context.ProductCategories.First(c => c.CategoryName == "Components");

@@ -11,14 +11,15 @@ using System.Text;
 using System.Threading.Tasks;
 using Webshop.Data;
 using Webshop.Models;
+using Webshop.Services.Interfaces;
 using Webshop.UI;
 
 namespace Webshop.Services;
-internal class Logic
+internal class LogicService : ILogicService
 {
     private readonly MyDbContext _dbContext;
     private Customer _currentCustomer;
-    public Logic(MyDbContext context)
+    public LogicService(MyDbContext context)
     {
         _dbContext = context;
     }
@@ -74,7 +75,7 @@ internal class Logic
         }
     }
 
-    public async Task<Order?> Checkout(int customerId, string shippingAddress, int zipCode, string city, string invoiceAddress, int invoiceZipCode, string invoiceCity, string paymentMethod, string shipmentMethod, string phoneNumber, string paymentInfo, decimal totalprice, decimal freightprice)
+    public async Task<Order?> CheckoutAsync(int customerId, string shippingAddress, int zipCode, string city, string invoiceAddress, int invoiceZipCode, string invoiceCity, string paymentMethod, string shipmentMethod, string phoneNumber, string paymentInfo, decimal totalprice, decimal freightprice)
     {
         if (string.IsNullOrWhiteSpace(shippingAddress))
             return null;
@@ -101,11 +102,11 @@ internal class Logic
                 CustomerId = customerId,
                 OrderDate = DateTime.Now,
                 ShippingAddress = shippingAddress,
-                zipCode = zipCode,
+                ZipCode = zipCode,
                 City = city,
-                invoiceAddress = invoiceAddress,
-                invoicezipCode = invoiceZipCode,
-                invoiceCity = invoiceCity,
+                InvoiceAddress = invoiceAddress,
+                InvoiceZipCode = invoiceZipCode,
+                InvoiceCity = invoiceCity,
                 Status = "Processing",
                 PaymentMethod = paymentMethod,
                 ShipmentMethod = shipmentMethod,
@@ -154,7 +155,7 @@ internal class Logic
             .OrderBy(o => o.OrderDate)
             .ToListAsync();
     }
-    public async Task<Cart?> EmptyCart(int customerid)
+    public async Task<Cart?> DeleteCartAsync(int customerid)
     {
         try
         {
@@ -212,5 +213,72 @@ internal class Logic
          .SumAsync();
 
         return maybeSum ?? 0;
+    }
+
+    public async Task<List<Order>> GetOrdersFromIdAsync(int userId)
+    {
+        var customer = await _dbContext.Customers
+            .Include(c => c.Orders)
+            .ThenInclude(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .FirstOrDefaultAsync(c => c.Id == userId);
+
+        if (customer == null)
+        {
+            Console.WriteLine($"Customer with ID {userId} not found.");
+            return new List<Order>();
+        }
+
+        if (!customer.Orders.Any())
+        {
+            Console.WriteLine($"Customer with ID {userId} has no orders.");
+            return new List<Order>();
+        }
+
+        foreach (var order in customer.Orders)
+        {
+            Console.WriteLine(new string('-', 98));
+            decimal netAmount = order.TotalAmount - order.FreightPrice;
+            decimal taxPrice = Math.Round(netAmount * 0.25m, 2);
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"\nOrder ID  : {order.Id}");
+            Console.WriteLine($"Order date: {order.OrderDate}");
+            Console.WriteLine($"Shipment    : {order.ShipmentMethod}");
+            Console.WriteLine($"Ship adress : {order.ShippingAddress}");
+            Console.WriteLine($"Ship Zip    : {order.ZipCode}");
+            Console.WriteLine($"Ship City   : {order.City}");
+            Console.WriteLine($"inv address : {order.InvoiceAddress}");
+            Console.WriteLine($"inv Zip     : {order.InvoiceZipCode}");
+            Console.WriteLine($"inv City    : {order.InvoiceCity}");
+            Console.WriteLine($"Payment     : {order.PaymentMethod} ({order.PaymentInfo})");
+            Console.WriteLine($"Freight     : {order.FreightPrice:C}");
+            Console.WriteLine($"Phone       : {order.PhoneNumber}");
+            Console.WriteLine($"TotalPrice  : {order.TotalAmount:C}");
+            Console.WriteLine($"VAT         : {taxPrice:C}");
+
+            Console.ResetColor();
+
+            foreach (var item in order.OrderItems)
+            {
+                Console.ForegroundColor = ConsoleColor.Magenta;
+                Console.WriteLine($"Product ID: {item.ProductId}, Product Name: {item.Product.Name}, Quantity: {item.Quantity}, Unit Price: {item.UnitPrice}, ");
+                Console.ResetColor();
+            }
+            Console.WriteLine(new string('-', 75));
+        }
+
+        return customer.Orders.ToList();
+    }
+
+    public async Task<Customer> RefreshCartAsync(int id)
+    {
+
+        return await _dbContext.Customers
+                .Include(c => c.Cart).ThenInclude(c => c.Items).ThenInclude(i => i.Product)
+                .FirstOrDefaultAsync(c => c.Id == _currentCustomer.Id);
+        
+        
+
     }
 }

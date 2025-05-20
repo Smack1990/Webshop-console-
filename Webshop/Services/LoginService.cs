@@ -7,13 +7,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Webshop.Data;
 using Webshop.Models;
+using Webshop.Services.Interfaces;
 
 namespace Webshop.Services;
-internal class Login
+internal class LoginService : ILoginService
 {
     private readonly MyDbContext _dbContext;
 
-    public Login(MyDbContext context)
+    public LoginService(MyDbContext context)
     {
         _dbContext = context;
     }
@@ -27,7 +28,9 @@ internal class Login
 
         if (!BCrypt.Net.BCrypt.Verify(password, customer.Password)) //Hanterar läsning hashat lösenord
             return (null, "Incorrect password.");
-        
+
+        await _dbContext.SaveChangesAsync();
+
         return (customer, "Login successful.");
     }
 }

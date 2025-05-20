@@ -14,37 +14,53 @@ using Webshop.Services;
 using Spectre.Console;
 using System.Runtime.InteropServices;
 using System.Net.NetworkInformation;
+using Webshop.Services.Interfaces;
 
 
 namespace Webshop.UI;
 internal class UI
 {
     private readonly MyDbContext _dbContext;
-    private readonly Registration _registration;
-    private readonly Logic _logic;
-    private readonly Login _login;
-    private readonly AdminHandler _adminHandler;
-    private readonly StatisticService _statsService;
+    private readonly IRegistrationService _registration;
+    private readonly ILogicService _logicService;
+    private readonly ILoginService _loginService;
+    private readonly IProductService _productService;
+    private readonly IStatisticService _statsService;
     private readonly GUI _gui;
+    private readonly ICategoryService _categoryService;
+    private readonly ISupplierService _supplierService;
+    private readonly ICustomerService _customerService;
+
 
     private Customer _currentCustomer;
 
-    public UI(MyDbContext context)
+    public UI(
+        IRegistrationService registration,
+        ILoginService loginService,
+        ILogicService logicService,
+        IProductService productService,
+        ICategoryService categoryService,
+        ISupplierService supplierService,
+        ICustomerService customerService,
+        IStatisticService statsService,
+        GUI gui
+    )
     {
-        _dbContext = context;
-        _registration = new Registration(context);
-        _login = new Login(context);
-        _logic = new Logic(context);
-        _adminHandler = new AdminHandler(context);
-        _statsService = new StatisticService(context);
-        _gui = new GUI(context);
+        _registration = registration;
+        _loginService = loginService;
+        _logicService = logicService;
+        _productService = productService;
+        _categoryService = categoryService;
+        _supplierService = supplierService;
+        _customerService = customerService;
+        _statsService = statsService;
+        _gui = gui;
     }
     #region start/login
     public async Task Start() //start av program
     {
         Console.CursorVisible = false;
    
-        TestDataSeeder.SeedTestDataAsync(_dbContext).Wait(); //Kör dataseeder för att populera databasen
 
 
 
@@ -62,7 +78,7 @@ internal class UI
                         await RouteAfterLogin();
                     break;
                 case '2':
-                    HandleLogin().Wait(); ;
+                    HandleLogin().Wait(); 
                     if (_currentCustomer != null)
                         await RouteAfterLogin();
                     break;
@@ -139,12 +155,12 @@ internal class UI
                 .Secret()
         );
 
-        var (customer, message) = await _login.AuthenticateAsync(email, password); //Login autentisering
+        var (customer, message) = await _loginService.AuthenticateAsync(email, password); //Login autentisering
         if (customer != null)
         {
             _currentCustomer = customer;
             _currentCustomer.Sitevisit++;
-            await _dbContext.SaveChangesAsync();
+           
             Console.WriteLine($"Welcome, {customer.FirstName}!\n");
         }
         else
@@ -289,7 +305,7 @@ internal class UI
         {
             AnsiConsole.Clear();
             await _gui.PrintBanner();
-            var cartQty = await _logic.NumberOfCartItemsAsync(_currentCustomer.Id);
+            var cartQty = await _logicService.NumberOfCartItemsAsync(_currentCustomer.Id);
             Console.SetCursorPosition(98, 4); Console.Write($"Cart: {cartQty} ");
             Console.SetCursorPosition(98, 5); Console.Write($"Welcome, {_currentCustomer.FirstName}!");
             await ShowLogins();
@@ -301,7 +317,7 @@ internal class UI
 
             if (_featuredKeyMap.TryGetValue(char.ToLower(key), out var prodId))
             {
-                var (ok, msg) = _logic.AddToCartAsync(_currentCustomer.Id, prodId, 1).GetAwaiter().GetResult();
+                var (ok, msg) = _logicService.AddToCartAsync(_currentCustomer.Id, prodId, 1).GetAwaiter().GetResult();
                 Console.WriteLine(ok ? $"Added to cart: {msg}" : $"Error: {msg}");
                 Console.WriteLine("Press any key to continue…");
                 Console.ReadKey(intercept: true);
@@ -337,6 +353,7 @@ internal class UI
 
                 case '5':
                     _currentCustomer = null;
+                    await Start();
 
                     return;
                 case '6' when _currentCustomer.IsAdmin:
@@ -354,7 +371,7 @@ internal class UI
 
     private async Task DrawFeaturedProducts()
     {
-        var products = _adminHandler.GetAllProducts().Result
+        var products = _productService.GetAllProducts().Result
             .Where(p => p.IsActive)
             .Take(3)
             .ToList();
@@ -432,7 +449,7 @@ internal class UI
         
         Console.CursorVisible = false;
 
-        var categories = _dbContext.ProductCategories.ToList();
+        var categories = await _categoryService.GetAllProductCategoriesAsync();
         while (true)
         {
             AnsiConsole.Clear();
@@ -462,7 +479,7 @@ internal class UI
             if (char.IsDigit(key) && (key - '0') is int idx && idx >= 1 && idx <= categories.Count)
             {
                 var cat = categories[idx - 1];
-                var products = await _adminHandler.GetAllProducts();
+                var products = await _productService.GetAllProducts();
 
                 var prod = products
                    .Where(p => p.ProductCategoryId == cat.Id)
@@ -509,7 +526,7 @@ internal class UI
                             Console.Write("Quantity: ");
                             if (int.TryParse(Console.ReadLine(), out int qty))
                             {
-                                var (ok, msg) = _logic.AddToCartAsync(_currentCustomer.Id, pid, qty).Result;
+                                var (ok, msg) = _logicService.AddToCartAsync(_currentCustomer.Id, pid, qty).Result;
                                 Console.WriteLine(msg);
                             }
                             else Console.WriteLine("Invalid quantity.");
@@ -537,11 +554,7 @@ internal class UI
     }
     public async Task<decimal> GetCartDetailsAsync()
     {
-        var customer = await _dbContext.Customers
-                   .Include(c => c.Cart)
-                   .ThenInclude(c => c.Items)
-                   .ThenInclude(i => i.Product)
-                   .FirstOrDefaultAsync(c => c.Id == _currentCustomer.Id);
+        var customer = await _customerService.GetCustomerCartAsync(_currentCustomer.Id);
 
 
 
@@ -581,18 +594,11 @@ internal class UI
         return total;
 
     }
-    public async Task<Customer?> GetCustomerCartAsync(int customerId)
-    {
-        return await _dbContext.Customers
-            .Include(c => c.Cart)
-                .ThenInclude(cart => cart.Items)
-                    .ThenInclude(item => item.Product)
-            .FirstOrDefaultAsync(c => c.Id == customerId);
-    }
+ 
     private async Task ViewOrdersAsync()// Lägg till search for order by date. 
     {
 
-        var orders = await _logic.GetCustomerOrdersAsync(_currentCustomer.Id);
+        var orders = await _logicService.GetCustomerOrdersAsync(_currentCustomer.Id);
         Console.WriteLine("Your Orders");
         Console.WriteLine(new string('-', 12));
         foreach (var order in orders)
@@ -606,11 +612,11 @@ internal class UI
             Console.WriteLine($"Order date: {order.OrderDate}");
             Console.WriteLine($"Shipment    : {order.ShipmentMethod}");
             Console.WriteLine($"Ship adress : {order.ShippingAddress}");
-            Console.WriteLine($"Ship Zip    : {order.zipCode}");
+            Console.WriteLine($"Ship Zip    : {order.ZipCode}");
             Console.WriteLine($"Ship City   : {order.City}");
-            Console.WriteLine($"inv address : {order.invoiceAddress}");
-            Console.WriteLine($"inv Zip     : {order.invoicezipCode}");
-            Console.WriteLine($"inv City    : {order.invoiceCity}");
+            Console.WriteLine($"inv address : {order.InvoiceAddress}");
+            Console.WriteLine($"inv Zip     : {order.InvoiceZipCode}");
+            Console.WriteLine($"inv City    : {order.InvoiceCity}");
             Console.WriteLine($"Payment     : {order.PaymentMethod} ({order.PaymentInfo})");
             Console.WriteLine($"Freight     : {order.FreightPrice:C}");
             Console.WriteLine($"Phone       : {order.PhoneNumber}");
@@ -719,7 +725,7 @@ internal class UI
             "Select payment method",
             "1. Swish, 2. Credit card, 3. Invoice (30 days), 4. In store, 5. Back"
         );
-        if (payPick == '4')
+        if (payPick == '5')
             return;
 
         var paymentMethod = payPick switch
@@ -746,7 +752,7 @@ internal class UI
             Console.Write("Enter credit card number: ");
             paymentInfo = Console.ReadLine()!;
         }
-        else
+        else if (payPick == '3')
         {
             Console.WriteLine("Is your invoice address the same as shipping address? Y/N");
             var answer = Console.ReadKey(true).KeyChar;
@@ -762,14 +768,30 @@ internal class UI
             {
 
                 Console.WriteLine("Enter invoice address:");
-                paymentInfo = Console.ReadLine()!;
+                invoiceAddress = Console.ReadLine()!;
+                Console.WriteLine("Enter invoice zip code:");
+                invoiceZipCode = int.TryParse(Console.ReadLine(), out invoiceZipCode) ? invoiceZipCode : 0;
+                Console.WriteLine("Enter invoice city:");
+                invoiceCity = Console.ReadLine()!;
             }
 
+        }
+        else if (payPick == '4')
+        {
+            //Console.Write("You have choosen to pay in store.");
+            paymentInfo = "In store";
+            
+        }
+  
+        else
+        {
+            Console.WriteLine("Invalid payment method.");
+            return;
         }
         decimal total = price + freightPrice;
         Console.WriteLine();
 
-        var order = await _logic.Checkout(
+        var order = await _logicService.CheckoutAsync(
             _currentCustomer.Id,
             shippingAddress,
             shippingZipCode,
@@ -785,7 +807,7 @@ internal class UI
             freightPrice
         );
 
-        // 4) Visa resultatet
+        
         Console.CursorVisible = true;
         if (order != null)
         {
@@ -821,7 +843,7 @@ internal class UI
 
         if (char.ToLower(keyInfo.KeyChar) == 'd')
         {
-            var result = await _logic.EmptyCart(_currentCustomer.Id);
+            var result = await _logicService.DeleteCartAsync(_currentCustomer.Id);
             Console.WriteLine(result != null
                 ? "Cart emptied successfully."
                 : "Could not empty cart.");
@@ -834,7 +856,7 @@ internal class UI
 
     private async Task ViewCartAsync()
     {
-        var customer = await GetCustomerCartAsync(_currentCustomer.Id);
+        var customer = await _customerService.GetCustomerCartAsync(_currentCustomer.Id);
         
 
         if (customer?.Cart?.Items == null || !customer.Cart.Items.Any())
@@ -881,7 +903,7 @@ internal class UI
                     return;
 
                 case 'd':
-                    var emptied = await _logic.EmptyCart(_currentCustomer.Id);
+                    var emptied = await _logicService.DeleteCartAsync(_currentCustomer.Id);
                     Console.WriteLine(emptied != null
                         ? "Cart emptied successfully.\n"
                         : "Could not empty cart.\n");
@@ -906,7 +928,7 @@ internal class UI
                         break;
                     }
 
-                    var (success, message) = await _logic.ChangeCartProductQuantityAsync(
+                    var (success, message) = await _logicService.ChangeCartProductQuantityAsync(
                         _currentCustomer.Id, pid, newQty);
                     Console.WriteLine(message + "\n");
                     Console.WriteLine("Press any key to refresh cart...");
@@ -921,9 +943,7 @@ internal class UI
             }
 
 
-            customer = await _dbContext.Customers
-                .Include(c => c.Cart).ThenInclude(c => c.Items).ThenInclude(i => i.Product)
-                .FirstOrDefaultAsync(c => c.Id == _currentCustomer.Id);
+            customer = await _customerService.GetCustomerCartAsync(_currentCustomer.Id);
         }
     }
 
@@ -938,7 +958,7 @@ internal class UI
         var id = Console.ReadLine();
 
       
-        var results = await _adminHandler.GetProductByName(id);
+        var results = await _productService.GetProductByName(id);
         if (!results.Any())
         {
             AnsiConsole.MarkupLine("[red]No products found.[/]");
@@ -985,7 +1005,7 @@ internal class UI
                         Console.Write("Quantity: ");
                         if (int.TryParse(Console.ReadLine(), out var qty))
                         {
-                            var (ok, msg) = await _logic.AddToCartAsync(
+                            var (ok, msg) = await _logicService.AddToCartAsync(
                                 _currentCustomer.Id, pid, qty
                             );
                             AnsiConsole.MarkupLine(ok
@@ -1092,7 +1112,7 @@ internal class UI
                     Console.Write("Enter customer ID: ");
                     if (int.TryParse(Console.ReadLine(), out int idLookUp))
                     {
-                        var c2 = _adminHandler.GetCustomerById(idLookUp).GetAwaiter().GetResult();
+                        var c2 = _customerService.GetCustomerByIdAsync(idLookUp).GetAwaiter().GetResult();
                         if (c2 != null)
                         {
                             Console.WriteLine($"{c2.Id}: {c2.FirstName} {c2.LastName} – {c2.Email} - {c2.Phone} - {c2.Address} (Admin: {c2.IsAdmin})");
@@ -1108,7 +1128,7 @@ internal class UI
                     Console.Clear();
                     Console.Write("Enter email: ");
                     var email = Console.ReadLine();
-                    var c3 = _adminHandler.GetCustomerByEmail(email).GetAwaiter().GetResult();
+                    var c3 = _customerService.GetCustomerByEmailAsync(email).GetAwaiter().GetResult();
                     if (c3 != null)
                     {
                         Console.WriteLine($"{c3.Id}: {c3.FirstName} {c3.LastName} – {c3.Email} - {c3.Phone} - {c3.Address} (Admin: {c3.IsAdmin})");
@@ -1128,7 +1148,7 @@ internal class UI
                     Console.Write("Enter ID to update: ");
                     if (int.TryParse(Console.ReadLine(), out int userId))
                     {
-                        var custId = _adminHandler.GetCustomerById(userId).GetAwaiter().GetResult();
+                        var custId = _customerService.GetCustomerByIdAsync(userId).GetAwaiter().GetResult();
                         if (custId != null)
                         {
                             Console.Write($"First Name ({custId.FirstName}): ");
@@ -1150,7 +1170,7 @@ internal class UI
                             var phone = Console.ReadLine();
                             if (!string.IsNullOrWhiteSpace(phone)) custId.Phone = phone;
 
-                            var (Success, M) = _adminHandler.UpdateCustomer(custId).Result;
+                            var (Success, M) = _customerService.UpdateCustomerAsync(custId).Result;
                             Console.WriteLine(M);
                         }
                         else Console.WriteLine("Not found.");
@@ -1166,7 +1186,7 @@ internal class UI
                     Console.Write("Enter ID to delete: ");
                     if (int.TryParse(Console.ReadLine(), out int deleteId))
                     {
-                        await _adminHandler.DeleteCustomer(deleteId);
+                        await _customerService.DeleteCustomerAsync(deleteId);
                         Console.WriteLine("Customer deleted.");
                     }
                     break;
@@ -1175,7 +1195,7 @@ internal class UI
                     Console.Write("Enter ID to toggle admin: ");
                     if (int.TryParse(Console.ReadLine(), out int AdminId))
                     {
-                        var (ok, m) = await _adminHandler.AdminHandelingOnID(AdminId);
+                        var (ok, m) = await _customerService.AdminHandelingOnIDAsync(AdminId);
                         Console.WriteLine(m);
                     }
                     break;
@@ -1185,7 +1205,7 @@ internal class UI
                     if (int.TryParse(Console.ReadLine(), out int orderId))
                     {
                         await GetAllCustomers();
-                        await _adminHandler.GetOrdersFromId(orderId);
+                        await _logicService.GetOrdersFromIdAsync(orderId);
 
 
                     }
@@ -1286,7 +1306,7 @@ internal class UI
     private async Task GetAllCustomers()
     {
         Console.Clear();
-        var allCo = await _adminHandler.GetAllCustomers();
+        var allCo = await _customerService.GetAllCustomersAsync();
         Console.WriteLine("\nAll Customers:");
         allCo.ForEach(c =>
             Console.WriteLine($"{c.Id}: {c.FirstName} {c.LastName} – {c.Email} (Admin: {c.IsAdmin})"));
@@ -1319,7 +1339,7 @@ internal class UI
                     supplier.PhoneNumber = Console.ReadLine();
                     Console.Write("Address: ");
                     supplier.Address = Console.ReadLine();
-                    var addSupplier = await _adminHandler.AddSupplier(supplier);
+                    var addSupplier = await _supplierService.AddSupplier(supplier);
                     Console.WriteLine(addSupplier.Message);
 
                     break;
@@ -1328,7 +1348,7 @@ internal class UI
                     Console.WriteLine("Edit a supplier");
                     if (CancelMethod())
                         break;
-                    var result = _adminHandler.GetAllSuppliers().GetAwaiter().GetResult();
+                    var result = _supplierService.GetAllSuppliersAsync().GetAwaiter().GetResult();
                     result.ForEach(s => Console.WriteLine($"  {s.Id}. {s.CompanyName}"));
                     Console.Write("ID to edit: ");
                     if (!int.TryParse(Console.ReadLine(), out int sid)) break;
@@ -1341,7 +1361,7 @@ internal class UI
                     update.PhoneNumber = Console.ReadLine();
                     Console.Write("New Address: ");
                     update.Address = Console.ReadLine();
-                    var updateSupplier = await _adminHandler.UpdateSuppliers(update);
+                    var updateSupplier = await _supplierService.UpdateSuppliers(update);
                     Console.WriteLine(updateSupplier.message);
 
                     break;
@@ -1350,15 +1370,15 @@ internal class UI
                     Console.WriteLine("Delete a supplier");
                     if (CancelMethod())
                         break;
-                    var res = _adminHandler.GetAllSuppliers().GetAwaiter().GetResult();
+                    var res = _supplierService.GetAllSuppliersAsync().GetAwaiter().GetResult();
                     res.ForEach(s => Console.WriteLine($"  {s.Id}. {s.CompanyName}"));
                     Console.Write("ID to delete: ");
                     if (!int.TryParse(Console.ReadLine(), out int did)) break;
-                    var dres = await _adminHandler.DeleteSupplier(did);
+                    var dres = await _supplierService.DeleteSupplier(did);
                     Console.WriteLine(dres.message);
                     break;
                 case '4':
-                    var suppliers = _adminHandler.GetAllSuppliers().GetAwaiter().GetResult();
+                    var suppliers = _supplierService.GetAllSuppliersAsync().GetAwaiter().GetResult();
                     suppliers.ForEach(s => Console.WriteLine($"  {s.Id}. {s.CompanyName} – {s.Email}, {s.PhoneNumber}"));
                     break;
                 case '6':
@@ -1404,7 +1424,7 @@ internal class UI
                     var name = Console.ReadLine();
                     Console.Write("Description: ");
                     var description = Console.ReadLine();
-                    var addCategory = _adminHandler.AddProductCategory(new ProductCategory { CategoryName = name, Description = description });
+                    var addCategory = await _categoryService.AddProductCategoryAsync(new ProductCategory { CategoryName = name, Description = description });
                     Console.WriteLine(addCategory.message);
                     break;
                 case '2':
@@ -1413,7 +1433,7 @@ internal class UI
                     if (CancelMethod())
                         break;
 
-                    var categories = await _adminHandler.GetAllProductCategories();
+                    var categories = await _categoryService.GetAllProductCategoriesAsync();
                     categories.ForEach(c => Console.WriteLine($"  {c.Id}. {c.CategoryName}"));
                     Console.Write("Category ID to edit: ");
                     if (!int.TryParse(Console.ReadLine(), out int cid)) break;
@@ -1421,22 +1441,22 @@ internal class UI
                     name = Console.ReadLine();
                     Console.Write("New Description: ");
                     description = Console.ReadLine();
-                    var updateCategory = _adminHandler.UpdateProductCategory(new ProductCategory { Id = cid, CategoryName = name, Description = description });
+                    var updateCategory = await _categoryService.UpdateProductCategoryAsync(new ProductCategory { Id = cid, CategoryName = name, Description = description });
                     Console.WriteLine(updateCategory.message);
                     break;
                 case '3':
-                    var result = await _adminHandler.GetAllProductCategories();
+                    var result = await _categoryService.GetAllProductCategoriesAsync();
                     foreach (var c in result)
                         Console.WriteLine($"  {c.Id}. {c.CategoryName} – {c.Description}");
 
 
                     break;
                 case '4':
-                    var categories1 = await _adminHandler.GetAllProductCategories();
+                    var categories1 = await _categoryService.GetAllProductCategoriesAsync();
                     categories1.ForEach(c => Console.WriteLine($"  {c.Id}. {c.CategoryName}"));
                     Console.Write("Category ID to Delete: ");
                     if (!int.TryParse(Console.ReadLine(), out int cid1)) break;
-                    var delRes = await _adminHandler.DeleteCategory(cid1);
+                    var delRes = await _categoryService.DeleteCategory(cid1);
                     Console.WriteLine(delRes.message);
                     break;
                 case '5':
@@ -1458,7 +1478,7 @@ internal class UI
         if (!int.TryParse(Console.ReadLine(), out int id))
             return;
 
-        var (success, message) = await _adminHandler.DeleteProduct(id);
+        var (success, message) = await _productService.DeleteProductAsync(id);
         Console.WriteLine(message);
         Console.WriteLine("Press any key to continue...");
         Console.ReadKey(true);
@@ -1473,7 +1493,7 @@ internal class UI
         if (CancelMethod())
             return;
 
-        var products = await _adminHandler.GetAllProducts();
+        var products = await _productService.GetAllProducts();
         products.ForEach(p => Console.WriteLine($"{p.Id} - {p.Name}"));
         Console.Write("Enter Product ID: ");
         if (!int.TryParse(Console.ReadLine(), out var productId))
@@ -1483,7 +1503,7 @@ internal class UI
             return;
         }
 
-        var prod = await _adminHandler.GetProductAsync(productId);
+        var prod = await _productService.GetProductAsync(productId);
         if (prod == null)
         {
             Console.WriteLine("Product not found.");
@@ -1491,7 +1511,7 @@ internal class UI
             return;
         }
 
-       var key = await _gui.PromptMenu("Select an alternative", "1. Name, 2. Description, 3. Price, 4. Stock, 5. Is Active, 6. Category, 7. Supplier, 8. SKU, 9. Update all fields, b. Back");
+       var key = await _gui.PromptMenu("Select an alternative", "1. Name, 2. Description, 3. Price, 4. Stock, 5. Is Active, 6. Category, 7. Supplier, 8. SKU, 9. Update all fields, d. delete, b. Back");
 
      
         Console.WriteLine();
@@ -1540,7 +1560,7 @@ internal class UI
                 Console.WriteLine();
                 break;
             case '6':
-                var cat = await _adminHandler.GetAllProductCategories();
+                var cat = await _categoryService.GetAllProductCategoriesAsync();
                 Console.WriteLine("\nCategories");
                 cat.ForEach(c => Console.WriteLine($"{c.Id} - {c.CategoryName}"));
 
@@ -1551,7 +1571,7 @@ internal class UI
                 if (CancelMethod())
                     break;
                 var currentName = prod.Supplier?.CompanyName ?? "[ingen leverantör]";
-                var suppliers = await _adminHandler.GetAllSuppliers();
+                var suppliers = await _supplierService.GetAllSuppliersAsync();
                 Console.WriteLine("\nSuppliers");
                 suppliers.ForEach(s => Console.WriteLine($"{s.Id} - {s.CompanyName}"));
                 Console.Write("Choose supplier ID: ");
@@ -1595,7 +1615,10 @@ internal class UI
                 input = Console.ReadLine();
                 if (!string.IsNullOrWhiteSpace(input)) prod.SKU = input;
                 break;
-
+            case 'd':
+                var message1 = await _productService.DeleteProductAsync(productId);
+                Console.WriteLine(message1.Message);
+                break;
             case 'b':
 
                 return;
@@ -1606,8 +1629,8 @@ internal class UI
                 return;
         }
 
-        // 3) Save changes
-        var (success, message) = await _adminHandler.UpdateProductAsync(prod);
+       
+        var (success, message) = await _productService.UpdateProductAsync(prod);
         Console.WriteLine(message);
         Console.WriteLine("Press any key to continue...");
         Console.ReadKey(true);
@@ -1616,73 +1639,119 @@ internal class UI
     private async Task AddProduct()
     {
         Console.Clear();
-        Console.WriteLine("Add Product");
-        if (CancelMethod())
-            return;
+        Console.WriteLine("Add Product\n");
+
+
+        if (CancelMethod()) return;
+
         var prod = new Product();
-        Console.WriteLine("Add a new product ");
-        Console.WriteLine(new string('-', 25));
-        Console.Write("Name: ");
-        prod.Name = Console.ReadLine();
-        if(string.IsNullOrWhiteSpace(prod.Name))
-        {
-            Console.WriteLine("Name cannot be empty.");
-            return;
-        }
-        Console.Write("Description: ");
-        prod.Description = Console.ReadLine();
-        if (string.IsNullOrWhiteSpace(prod.Description))
-        {
-            Console.WriteLine("Description cannot be empty.");
-            return;
-        }
-        Console.Write("Price: ");
-        prod.Price = decimal.Parse(Console.ReadLine());
-        if (prod.Price <= 0)
-        {
-            Console.WriteLine("Price must be greater than 0.");
-            return;
-        }
-        Console.Write("Stock: ");
-        prod.Stock = int.Parse(Console.ReadLine());
-        if (prod.Stock < 0)
-        {
-            Console.WriteLine("Stock cannot be negative.");
-            return;
-        }
 
-        var cat = await _adminHandler.GetAllProductCategories();
-        Console.WriteLine("\nCategories");
-        cat.ForEach(c => Console.WriteLine($"{c.Id} - {c.CategoryName}"));
+        
+        do
+        {
+            Console.Write("Name: ");
+            prod.Name = Console.ReadLine()?.Trim();
+            if (string.IsNullOrWhiteSpace(prod.Name))
+                AnsiConsole.MarkupLine("[red]Name cannot be empty[/]");
+        } while (string.IsNullOrWhiteSpace(prod.Name));
 
-        Console.Write("Choose category ID: ");
-        prod.ProductCategoryId = int.Parse(Console.ReadLine());
+       
+        do
+        {
+            Console.Write("Description: ");
+            prod.Description = Console.ReadLine()?.Trim();
+            if (string.IsNullOrWhiteSpace(prod.Description))
+                AnsiConsole.MarkupLine("[red]Description cannot be empty[/]");
+        } while (string.IsNullOrWhiteSpace(prod.Description));
 
-        var suppliers = await _adminHandler.GetAllSuppliers();
-        Console.WriteLine("\nSuppliers");
-        suppliers.ForEach(s => Console.WriteLine($"{s.Id} - {s.CompanyName}"));
-        Console.Write("Choose supplier ID: ");
-        prod.SupplierId = int.Parse(Console.ReadLine());
+      
+        decimal price;
+        do
+        {
+            Console.Write("Price: ");
+            var input = Console.ReadLine();
+            if (decimal.TryParse(input, out price) && price > 0)
+                break;
+            AnsiConsole.MarkupLine("[red]Invalid price. Enter a number > 0[/]");
+        } while (true);
+        prod.Price = price;
+
+       
+        int stock;
+        do
+        {
+            Console.Write("Stock: ");
+            var input = Console.ReadLine();
+            if (int.TryParse(input, out stock) && stock >= 0)
+                break;
+            AnsiConsole.MarkupLine("[red]Invalid stock. Enter 0 or a positive integer[/]");
+        } while (true);
+        prod.Stock = stock;
+
+       
+        var categories = await _categoryService.GetAllProductCategoriesAsync();
+        Console.WriteLine("\nCategories:");
+        categories.ForEach(c => Console.WriteLine($" {c.Id}. {c.CategoryName}"));
+        int catId;
+        do
+        {
+            Console.Write("Choose category ID: ");
+            var input = Console.ReadLine();
+            if (int.TryParse(input, out catId) &&
+                categories.Any(c => c.Id == catId))
+                break;
+            AnsiConsole.MarkupLine("[red]Invalid category ID. Pick one from the list[/]");
+        } while (true);
+        prod.ProductCategoryId = catId;
+
+       
+        var suppliers = await _supplierService.GetAllSuppliersAsync();
+        Console.WriteLine("\nSuppliers:");
+        suppliers.ForEach(s => Console.WriteLine($" {s.Id}. {s.CompanyName}"));
+        int supId;
+        do
+        {
+            Console.Write("Choose supplier ID: ");
+            var input = Console.ReadLine();
+            if (int.TryParse(input, out supId) &&
+                suppliers.Any(s => s.Id == supId))
+                break;
+            AnsiConsole.MarkupLine("[red]Invalid supplier ID. Pick one from the list[/]");
+        } while (true);
+        prod.SupplierId = supId;
 
         Console.Write("Is Active? (y/n): ");
-        prod.IsActive = Console.ReadKey(intercept: true).KeyChar is 'y' or 'Y';
-        Console.WriteLine("\n");
-        Console.Write("SKU:");
-        prod.SKU = Console.ReadLine();
-        if (string.IsNullOrWhiteSpace(prod.SKU))
+        while (true)
         {
-            Console.WriteLine("SKU cannot be empty.");
-            return;
+            var key = Console.ReadKey(intercept: true).KeyChar;
+            if (key == 'y' || key == 'Y')
+            {
+                prod.IsActive = true;
+                Console.WriteLine(" Y");
+                break;
+            }
+            if (key == 'n' || key == 'N')
+            {
+                prod.IsActive = false;
+                Console.WriteLine(" N");
+                break;
+            }
         }
 
+        
+        do
+        {
+            Console.Write("SKU: ");
+            prod.SKU = Console.ReadLine()?.Trim();
+            if (string.IsNullOrWhiteSpace(prod.SKU))
+                Console.WriteLine("[red]SKU cannot be empty[/]");
+        } while (string.IsNullOrWhiteSpace(prod.SKU));
 
-        var (success, message) = await _adminHandler.AddProductAsync(prod);
-        Console.WriteLine(message);
-        Console.WriteLine("Press any key to continue");
+        
+        var (success, message) = await _productService.AddProductAsync(prod);
+        Console.WriteLine($"\n{message}");
+        AnsiConsole.MarkupLine("Press any key to continue…");
         Console.ReadKey(true);
-
-
-
     }
     #endregion
 

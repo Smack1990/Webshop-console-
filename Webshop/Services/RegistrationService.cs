@@ -6,12 +6,13 @@ using System.Text;
 using System.Threading.Tasks;
 using Webshop.Data;
 using Webshop.Models;
+using Webshop.Services.Interfaces;
 
 namespace Webshop.Services;
-internal class Registration
+internal class RegistrationService : IRegistrationService
 {
     private readonly MyDbContext _dbContext;
-    public Registration(MyDbContext context)
+    public RegistrationService(MyDbContext context)
     {
         _dbContext = context;
     }

@@ -13,5 +13,5 @@ public class Supplier
     public string? PhoneNumber { get; set; }
     public string? Address { get; set; }
 
-    public ICollection<Product> Products { get; set; } = new List<Product>();
+    public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 }

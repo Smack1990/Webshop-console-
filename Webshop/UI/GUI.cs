@@ -14,23 +14,7 @@ internal class GUI
     {
         _dbContext = context;
     }
-    public async Task DrawFrame(IEnumerable<string> lines, int width)
-    {
-        // Top border
-        Console.WriteLine("╔" + new string('═', width - 2) + "╗");
 
-        foreach (var line in lines)
-        {
-            // Trim or pad
-            var text = line.Length > width - 4
-              ? line.Substring(0, width - 4)
-              : line.PadRight(width - 4);
-            Console.WriteLine("║ " + text + " ║");
-        }
-
-        // Bottom border
-        Console.WriteLine("╚" + new string('═', width - 2) + "╝");
-    }
     public async Task PrintBanner()
     {
         const string banner = @"

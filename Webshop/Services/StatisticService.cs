@@ -6,9 +6,10 @@ using System.Text;
 using System.Threading.Tasks;
 using Webshop.Data;
 using Webshop.Models;
+using Webshop.Services.Interfaces;
 
 namespace Webshop.Services;
-public class StatisticService
+public class StatisticService : IStatisticService
 {
     private readonly MyDbContext _dbContext;
     public StatisticService(MyDbContext context)
