@@ -17,7 +17,7 @@ public class StatisticService : IStatisticService
         _dbContext = context;
     }
 
-    public async Task<List<(Product Product, int TotalSold)>> GetBestSellingProductsAsync(int topNumber)
+    public async Task<List<(Product Product, int TotalSold)>> GetBestSellingProductsAsync(int topNumber) //Hämtade bästsäljande produkter with total sold amount
     {
         var raw = await _dbContext.OrderItems
          .GroupBy(o => o.Product)
@@ -35,7 +35,7 @@ public class StatisticService : IStatisticService
             .Select(x => (x.Product, x.Total))
             .ToList();
     }
-    public async Task<List<Product>> GetallProductsOrderdBybestsellingAsync(int number)
+    public async Task<List<Product>> GetallProductsOrderdBybestsellingAsync(int number) //hämta bästsäljande produkter
     {
         var raw = await _dbContext.OrderItems
             .GroupBy(o => o.Product)
@@ -52,7 +52,7 @@ public class StatisticService : IStatisticService
             .ToList();
     }
 
-    public async Task<List<(string ProductCategory, int OrderCount)>> MostPopularCategoryAsync()
+    public async Task<List<(string ProductCategory, int OrderCount)>> MostPopularCategoryAsync() //mest populär kategori
     {
        
         var raw = await _dbContext.OrderItems
@@ -66,7 +66,7 @@ public class StatisticService : IStatisticService
         return raw.Select(x => (x.Category, x.Total)).ToList();
     }
 
-    public async Task<List<(string? PaymentMethod, int OrderCount)>> MostPopularPaymentMethodAsync()
+    public async Task<List<(string? PaymentMethod, int OrderCount)>> MostPopularPaymentMethodAsync() //mest populär kategori
     {
         var raw = await _dbContext.Orders
             .GroupBy(o => o.PaymentMethod)
@@ -81,7 +81,7 @@ public class StatisticService : IStatisticService
             .Select(x => (x.PaymentMethod, x.OrderCount))
             .ToList();
     }
-    public async Task<List<(Supplier Supplier, decimal TotalSales)>> GetSalesBySupplierAsync()
+    public async Task<List<(Supplier Supplier, decimal TotalSales)>> GetSalesBySupplierAsync() // hämta försäljning per leverantör
     {
         var raw = await _dbContext.Orders
             .SelectMany(o => o.OrderItems)
@@ -98,7 +98,7 @@ public class StatisticService : IStatisticService
             .ToList();
     }
 
-    public async Task<List<(Customer Customer, int Visits)>> GetTopSiteVisitorsAsync(int top = 5)
+    public async Task<List<(Customer Customer, int Visits)>> GetTopSiteVisitorsAsync(int top = 5) //hämta topp 5 besökare
     {
       
         var raw = await _dbContext.Customers

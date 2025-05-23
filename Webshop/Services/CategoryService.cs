@@ -15,7 +15,7 @@ internal class CategoryService : ICategoryService
     {
         _dbContext = context;
     }
-    public async Task<(bool success, string message)> AddProductCategoryAsync(ProductCategory category)
+    public async Task<(bool success, string message)> AddProductCategoryAsync(ProductCategory category) //Lägg till ny kategori
     {
         try
         {
@@ -31,7 +31,7 @@ internal class CategoryService : ICategoryService
             return (false, $"Error adding category: {ex.Message}");
         }
     }
-    public async Task<(bool success, string message)> UpdateProductCategoryAsync(ProductCategory category)
+    public async Task<(bool success, string message)> UpdateProductCategoryAsync(ProductCategory category) //Uppdatera kategori
     {
         try
         {
@@ -51,7 +51,7 @@ internal class CategoryService : ICategoryService
             return (false, "An error occured" + e.Message);
         }
     }
-    public async Task<List<ProductCategory>> GetAllProductCategoriesAsync()
+    public async Task<List<ProductCategory>> GetAllProductCategoriesAsync() //Hämta alla kategorier
     {
         return _dbContext.ProductCategories.ToList();
     }

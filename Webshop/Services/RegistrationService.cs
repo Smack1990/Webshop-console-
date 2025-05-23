@@ -17,7 +17,7 @@ internal class RegistrationService : IRegistrationService
         _dbContext = context;
     }
 
-    public async Task<(bool Success, string Message)> RegisterCustomerAsync(Customer newCustomer, string password)
+    public async Task<(bool Success, string Message)> RegisterCustomerAsync(Customer newCustomer, string password) // Register a new customer
     {
         if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
             return (false, "Password must be at least 8 characters long.");
@@ -42,7 +42,7 @@ internal class RegistrationService : IRegistrationService
             return (false, "An error occurred during registration: " + e.Message);
         }
     }
-    public async Task<bool> CheckIfEmailExistAsync(string email)
+    public async Task<bool> CheckIfEmailExistAsync(string email) // Check if email already exists
     {
         return await _dbContext.Customers
             .AsNoTracking()

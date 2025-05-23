@@ -8,18 +8,18 @@ using System.Threading.Tasks;
 namespace Webshop.Models;
 public class OrderItem
 {
-    public int Id { get; set; }
+    public int Id { get; set; } // Primary Key
 
-    
-    public int OrderId { get; set; }
-    public virtual Order Order { get; set; }
 
-    public int ProductId { get; set; }
-    public virtual Product Product { get; set; }
+    public int OrderId { get; set; } // Foreign Key till Order
+    public virtual Order Order { get; set; } // Navigation property till Order
 
-    public int Quantity { get; set; }
+    public int ProductId { get; set; } // Foreign Key till Product
+    public virtual Product Product { get; set; } // Navigation property till Product
 
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal UnitPrice { get; set; }
+    public int Quantity { get; set; } // Antal av produkten i beställningen
+
+    //[Column(TypeName = "decimal(18,2)")]
+    public decimal UnitPrice { get; set; } // Enhetspris för produkten vid beställningstillfället
 
 }

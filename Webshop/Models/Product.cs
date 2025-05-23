@@ -10,27 +10,27 @@ using System.Threading.Tasks;
 namespace Webshop.Models;
 public class Product
 {
-    public int Id { get; set; }
+    public int Id { get; set; } // Primary Key
 
 
-    public string? Name { get; set; }
-    public string? Description { get; set; }
+    public string? Name { get; set; } // Namn på produkten
+    public string? Description { get; set; } // Beskrivning av produkten
 
-   
-    public decimal Price { get; set; }
-    public int Stock { get; set; }
-    public string SKU { get; set; }
-    
-    public DateTime CreatedDate { get; set; } 
 
-    public bool IsActive { get; set; } = true;
-    public int QuantitySold { get; set; }
+    public decimal Price { get; set; } // Enhetspris för produkten
+    public int Stock { get; set; } // Antal i lager
+    public string SKU { get; set; } // SKU (Stock Keeping Unit) för produkten
 
-    public int ProductCategoryId { get; set; } 
-    public virtual ProductCategory Category { get; set; }
-    public int SupplierId { get; set; }
-    public virtual Supplier Supplier { get; set; }
-   
-    public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
-    public virtual ICollection<OrderItem> Orders { get; set; } = new List<OrderItem>();
+    public DateTime CreatedDate { get; set; } // Datum för när produkten skapades
+
+    public bool IsActive { get; set; } = true; // Om produkten är aktiv eller inte, sätts i adminpanelen, visas i featured produkter
+    public int QuantitySold { get; set; }// Antal sålda produkter
+
+    public int ProductCategoryId { get; set; }  // Foreign Key till ProductCategory
+    public virtual ProductCategory Category { get; set; } // Navigation property till ProductCategory
+    public int SupplierId { get; set; } // Foreign Key till Supplier
+    public virtual Supplier Supplier { get; set; } // Navigation property till Supplier
+
+    public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>(); // Lista med CartItems
+    public virtual ICollection<OrderItem> Orders { get; set; } = new List<OrderItem>(); // Lista med OrderItems
 }

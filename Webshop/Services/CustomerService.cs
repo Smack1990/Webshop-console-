@@ -17,7 +17,7 @@ internal class CustomerService : ICustomerService
     {
         _dbContext = context;
     }
-    public async Task DeleteCustomerAsync(int customerId)
+    public async Task DeleteCustomerAsync(int customerId) // tar bort en kund
     {
 
         var customer = await _dbContext.Customers.FindAsync(customerId);
@@ -29,7 +29,7 @@ internal class CustomerService : ICustomerService
         }
 
     }
-    public async Task<Customer?> GetCustomerCartAsync(int customerId)
+    public async Task<Customer?> GetCustomerCartAsync(int customerId) // hämtar kundens varukorg
     {
         return await _dbContext.Customers
             .Include(c => c.Cart)
@@ -50,7 +50,7 @@ internal class CustomerService : ICustomerService
     {
         return await _dbContext.Customers.FirstOrDefaultAsync(c => c.Email == email);
     }
-    public async Task<(bool success, string message)> UpdateCustomerAsync(Customer customer)
+    public async Task<(bool success, string message)> UpdateCustomerAsync(Customer customer) //updatea en kund
     {
         try
         {
@@ -71,7 +71,7 @@ internal class CustomerService : ICustomerService
         }
     }
 
-    public async Task<(bool success, string message)> AdminHandelingOnIDAsync(int userId)
+    public async Task<(bool success, string message)> AdminHandelingOnIDAsync(int userId) // hantera adminrättigheter 
     {
         var customer = await _dbContext.Customers.FindAsync(userId);
         if (customer == null)

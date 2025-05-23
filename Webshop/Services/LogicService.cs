@@ -24,7 +24,7 @@ internal class LogicService : ILogicService
         _dbContext = context;
     }
 
-    public async Task<(bool success, string message)> AddToCartAsync(int customerId, int productId, int quantity)
+    public async Task<(bool success, string message)> AddToCartAsync(int customerId, int productId, int quantity) //addera till kundvagnen
     {
         if (quantity <= 0)
             return (false, "Quantity must be greater than 0");
@@ -75,6 +75,7 @@ internal class LogicService : ILogicService
         }
     }
 
+    //checkoutmetod
     public async Task<Order?> CheckoutAsync(int customerId, string shippingAddress, int zipCode, string city, string invoiceAddress, int invoiceZipCode, string invoiceCity, string paymentMethod, string shipmentMethod, string phoneNumber, string paymentInfo, decimal totalprice, decimal freightprice)
     {
         if (string.IsNullOrWhiteSpace(shippingAddress))
@@ -146,6 +147,7 @@ internal class LogicService : ILogicService
             return null;
         }
     }
+    //hämta orderhistorik
     public async Task<List<Order>> GetCustomerOrdersAsync(int customerId)
     {
         return await _dbContext.Orders
@@ -155,7 +157,7 @@ internal class LogicService : ILogicService
             .OrderBy(o => o.OrderDate)
             .ToListAsync();
     }
-    public async Task<Cart?> DeleteCartAsync(int customerid)
+    public async Task<Cart?> DeleteCartAsync(int customerid) //radera kundvagn
     {
         try
         {
@@ -177,7 +179,7 @@ internal class LogicService : ILogicService
         }
     }
 
-    public async Task<(bool Success, string Message)> ChangeCartProductQuantityAsync(int customerId, int productId, int newQuantity)
+    public async Task<(bool Success, string Message)> ChangeCartProductQuantityAsync(int customerId, int productId, int newQuantity) // ändra kvantitet i kundvagnen
     {
 
         var cartItem = await _dbContext.CartItems
@@ -215,7 +217,7 @@ internal class LogicService : ILogicService
         return maybeSum ?? 0;
     }
 
-    public async Task<List<Order>> GetOrdersFromIdAsync(int userId)
+    public async Task<List<Order>> GetOrdersFromIdAsync(int userId) //hämta orderhistorik på id
     {
         var customer = await _dbContext.Customers
             .Include(c => c.Orders)
@@ -271,7 +273,7 @@ internal class LogicService : ILogicService
         return customer.Orders.ToList();
     }
 
-    public async Task<Customer> RefreshCartAsync(int id)
+    public async Task<Customer> RefreshCartAsync(int id) //uppdatera kundvagnen
     {
 
         return await _dbContext.Customers

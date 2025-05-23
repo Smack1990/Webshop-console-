@@ -10,7 +10,7 @@ namespace Webshop.Data
     using System.Threading.Tasks;
     using Webshop.Models;
 
-    public static class DataSeeder
+    public static class DataSeeder // Dataseeder för att pupulera databasen vid start. Inställd för att fylla på vitala data för att programmet ska fungera. Kontrollerar om produkterna/kategorierna/leverantörerna  finns. Finns dem inte så läggs dem till. 
     {
         public static async Task SeedTestDataAsync(MyDbContext context)
         {
@@ -48,7 +48,7 @@ namespace Webshop.Data
             }
             await context.SaveChangesAsync();
 
-            // Seed Suppliers individually
+         
             var suppliersToSeed = new[]
             {
                 new Supplier { CompanyName = "Allebike",    Email = "contact@allebike.com",    PhoneNumber = "555-0001", Address = "1 Bike Lane" },
@@ -86,6 +86,7 @@ namespace Webshop.Data
 
             var productsToSeed = new[]
             {
+                // Bikes
                 new Product { Name = "Alpa XT", Description = "Extremely fast XC bike.", Price = 34000m, Stock = 10, SupplierId = allebike.Id,    ProductCategoryId = bikesCat.Id, SKU = "Alpha-25",      IsActive = true, CreatedDate = now },
                 new Product { Name = "Specialized S-Works evo comp", Description = "Carbon fiber frame.", Price = 98000m, Stock = 2, SupplierId = specialized.Id, ProductCategoryId = bikesCat.Id, SKU = "S-Work-b",    IsActive = true, CreatedDate = now },
                 new Product { Name = "Scott sparks RC WC", Description = "World Cup edition.", Price = 55000m, Stock = 8, SupplierId = scott.Id,      ProductCategoryId = bikesCat.Id, SKU = "Scott-24",     IsActive = true, CreatedDate = now },
@@ -94,13 +95,12 @@ namespace Webshop.Data
                 new Product { Name = "Hex wrenches", Description = "Hex wrenches for every part.", Price = 199.98m, Stock = 25, SupplierId = park.Id,       ProductCategoryId = toolsCat.Id, SKU = "hw-6",         IsActive = true, CreatedDate = now },
                 new Product { Name = "Rim tuner", Description = "Professional tuner for rims.", Price = 1200.00m, Stock = 10, SupplierId = park.Id,       ProductCategoryId = toolsCat.Id, SKU = "R-1-kd",        IsActive = true, CreatedDate = now },
                 new Product { Name = "Derailleur hanger adjuster", Description = "A Derailleur hanger adjuster to help you with tweek your DH.", Price = 869.00m, Stock = 12, SupplierId = park.Id,   ProductCategoryId = toolsCat.Id, SKU = "DH-1",          IsActive = true, CreatedDate = now },
-                // Additional Tools
                 new Product { Name = "Pedal wrench", Description = "15mm wrench specifically for pedals.", Price = 129.99m, Stock = 50, SupplierId = park.Id, ProductCategoryId = toolsCat.Id, SKU = "PW-15", IsActive = true, CreatedDate = now },
                 new Product { Name = "Tire lever set", Description = "Set of 3 nylon tire levers.", Price = 19.99m, Stock = 100, SupplierId = park.Id, ProductCategoryId = toolsCat.Id, SKU = "TL-3", IsActive = true, CreatedDate = now },
                 new Product { Name = "Multi-tool", Description = "10-in-1 bike multi-tool with hex keys and screwdrivers.", Price = 49.50m, Stock = 75, SupplierId = park.Id, ProductCategoryId = toolsCat.Id, SKU = "MT-10", IsActive = true, CreatedDate = now },
                 new Product { Name = "Chain whip", Description = "Durable chain whip for cassette removal.", Price = 25.00m, Stock = 30, SupplierId = park.Id, ProductCategoryId = toolsCat.Id, SKU = "CW-01", IsActive = true, CreatedDate = now },
                 new Product { Name = "Torque wrench", Description = "Adjustable torque wrench with preset values.", Price = 199.95m, Stock = 20, SupplierId = park.Id, ProductCategoryId = toolsCat.Id, SKU = "W-100", IsActive = true, CreatedDate = now },
-            // Components
+                // Components
                 new Product { Name = "Shimano m700 Chain Set 12s", Description = "Lightweight aluminum bicycle chain set.", Price = 440.50m, Stock = 40, SupplierId = shimano.Id, ProductCategoryId = compsCat.Id, SKU = "m700-12s",     IsActive = true, CreatedDate = now },
                 new Product { Name = "Rear Derailleur m700 12s", Description = "A good Derailleur for a good price.", Price = 89.50m, Stock = 40, SupplierId = shimano.Id, ProductCategoryId = compsCat.Id, SKU = "m700-12s-rd",  IsActive = true, CreatedDate = now },
                 new Product { Name = "Shimano XT Front derailleur", Description = "shimano XT", Price = 752.00m, Stock = 40, SupplierId = shimano.Id, ProductCategoryId = compsCat.Id, SKU = "XT-01-1",       IsActive = true, CreatedDate = now },
@@ -112,7 +112,7 @@ namespace Webshop.Data
             };
             foreach (var prod in productsToSeed)
             {
-                // Only add if a product with the same SKU doesn't already exist
+               
                 if (!context.Products.Any(p => p.SKU == prod.SKU))
                 {
                     context.Products.Add(prod);

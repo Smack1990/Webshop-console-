@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Webshop.Models;
+using Webshop.Models.DTO;
 
 namespace Webshop.Services.Interfaces;
 internal interface IProductService

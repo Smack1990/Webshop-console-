@@ -16,7 +16,7 @@ internal class SupplierService : ISupplierService
     {
         _dbContext = context;
     }
-    public async Task<(bool success, string message)> UpdateSuppliers(Supplier Supplier)
+    public async Task<(bool success, string message)> UpdateSuppliers(Supplier Supplier) //uppdatera leverantör
     {
         try
         {
@@ -38,7 +38,7 @@ internal class SupplierService : ISupplierService
         }
 
     }
-    public async Task<(bool Success, string Message)> AddSupplier(Supplier supplier)
+    public async Task<(bool Success, string Message)> AddSupplier(Supplier supplier)//Lägg till leverantör
     {
         try
         {
@@ -60,7 +60,7 @@ internal class SupplierService : ISupplierService
             return (false, $"Error adding product: {ex.Message}");
         }
     }
-    public async Task<(bool success, string message)> DeleteSupplier(int supplierId)
+    public async Task<(bool success, string message)> DeleteSupplier(int supplierId) //Uppdatera leverantör
     {
         try
         {
@@ -85,7 +85,7 @@ internal class SupplierService : ISupplierService
         }
     }
 
-    public async Task<List<Supplier>> GetAllSuppliersAsync()
+    public async Task<List<Supplier>> GetAllSuppliersAsync() //hämta alla leverantörer
     {
         return _dbContext.Suppliers.ToList();
     }

@@ -367,7 +367,7 @@ internal class UI
             }
         }
     }
-    private Dictionary<char, int> _featuredKeyMap;
+    private Dictionary<char, int> _featuredKeyMap; //dictionary för att hantera inmatningen av produktval i featured products och best selling
 
     private async Task DrawFeaturedProducts()
     {
@@ -444,7 +444,7 @@ internal class UI
 
         
     }
-    public async Task ViewCategoriesAsync()
+    public async Task ViewCategoriesAsync() //Öppna upp Kategorierna och loopa över dem
     {
         
         Console.CursorVisible = false;
@@ -552,7 +552,7 @@ internal class UI
 
         Console.CursorVisible = true;
     }
-    public async Task<decimal> GetCartDetailsAsync()
+    public async Task<decimal> GetCartDetailsAsync() // hämta varukorgens innehåll och summera totalsumman
     {
         var customer = await _customerService.GetCustomerCartAsync(_currentCustomer.Id);
 
@@ -641,15 +641,15 @@ internal class UI
     }
 
 
-    public async Task Checkout()
+    public async Task Checkout() // Hanterar checkout av varukorgen genom lämpliga steg för utecheckning.
     {
         Console.CursorVisible = false;
 
 
-        decimal price = await GetCartDetailsAsync();
+        decimal price = await GetCartDetailsAsync(); // hämtar varukorgens innehåll och summerar totalsumman även här
         if (price == 0)
             return;
-        await DeleteCart();
+        await DeleteCart(); // möjlighet att tömma varukorgen
 
 
         var shipPick = await _gui.PromptMenu(
@@ -810,7 +810,7 @@ internal class UI
         
         Console.CursorVisible = true;
         if (order != null)
-        {
+        { // printa ut nyligen lagd order
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine($"\nOrder placed! ID: {order.Id}");
@@ -836,7 +836,7 @@ internal class UI
         Console.ReadKey(true);
     }
 
-    private async Task DeleteCart()
+    private async Task DeleteCart() // rader varukorgen
     {
 
         var keyInfo = Console.ReadKey(intercept: true);
@@ -854,7 +854,7 @@ internal class UI
 
   
 
-    private async Task ViewCartAsync()
+    private async Task ViewCartAsync() // hanterar varukorgen och dess innehåll
     {
         var customer = await _customerService.GetCustomerCartAsync(_currentCustomer.Id);
         
@@ -948,7 +948,7 @@ internal class UI
     }
 
 
-    public async Task SearchForProductsByName()
+    public async Task SearchForProductsByName() //Fritext sökning efter produk. Antingen via namn eller leverantör. möjlighet att addera sökt produkt till kundkorg
     {
         Console.CursorVisible = false;
         Console.Clear();
@@ -1040,7 +1040,7 @@ internal class UI
 
     #endregion
     #region Adminmenu
-    private async Task AdminMenu()
+    private async Task AdminMenu() //Meny för admin
     {
         while (true)
         {
@@ -1052,26 +1052,26 @@ internal class UI
             switch (key)
             {
                 case '1':
-                    await AddProduct();
+                    await AddProduct(); //lägg till produkt i databasen
                     break;
                 case '2':
-                    await EditProduct();
+                    await EditProduct(); // Editera/uppdatera produkt 
                     break;
                 case '3':
-                    await DeleteProduct();
+                    await DeleteProduct(); //radera produkt. (kan ej raderas om det ligger i en kundkorg eller på en order)
                     break;
                 case '4':
-                    await ManageCategories();
+                    await ManageCategories(); //Hantera kategorier
                     break;
                 case '5':
-                    await ManageSuppliers();
+                    await ManageSuppliers(); //Hantera leverantörer
                     break;
                 case '6':
-                    await ManageCustomers();
+                    await ManageCustomers(); //Hantera kunder
                     break;
                 case '7':
 
-                    await ViewStatsticsMenu();
+                    await ViewStatsticsMenu(); //Visa statistik
                     break;
                 case '8':
                     if (_currentCustomer.IsAdmin)
@@ -1085,7 +1085,7 @@ internal class UI
         }
     }
 
-    private async Task ManageCustomers()
+    private async Task ManageCustomers() //Hantera kunder
     {
         Console.CursorVisible = false;
         while (true)
@@ -1226,7 +1226,7 @@ internal class UI
         }
     }
 
-    private async Task ViewStatsticsMenu()
+    private async Task ViewStatsticsMenu() // kolla på statistik
     {
         while (true)
         {
@@ -1303,7 +1303,7 @@ internal class UI
 
     }
 
-    private async Task GetAllCustomers()
+    private async Task GetAllCustomers() // hämta kunder
     {
         Console.Clear();
         var allCo = await _customerService.GetAllCustomersAsync();
@@ -1312,7 +1312,7 @@ internal class UI
             Console.WriteLine($"{c.Id}: {c.FirstName} {c.LastName} – {c.Email} (Admin: {c.IsAdmin})"));
     }
 
-    private async Task ManageSuppliers()
+    private async Task ManageSuppliers() //Hantera leverantörer
     {
         while (true)
         {
@@ -1392,7 +1392,7 @@ internal class UI
         }
     }
 
-    private bool CancelMethod()
+    private bool CancelMethod() //metod för att avbryta vald switch
     {
         Console.WriteLine(new string('-', 50));
         Console.WriteLine("Press ESC to cancel or any key to proceed");
@@ -1401,7 +1401,7 @@ internal class UI
         return keyInfo.Key == ConsoleKey.Escape;
     }
 
-    private async Task ManageCategories()
+    private async Task ManageCategories() //hantera kategorier och dess innehåll
     {
         while (true)
         {
@@ -1470,7 +1470,7 @@ internal class UI
         }
     }
 
-    private async Task DeleteProduct()
+    private async Task DeleteProduct() //radera produkt
     {
         Console.Clear();
         Console.WriteLine("Delete Product:\n");
@@ -1485,7 +1485,7 @@ internal class UI
     }
 
 
-    private async Task EditProduct()
+    private async Task EditProduct() // uppdatera produkter
     {
         Console.Clear();
         Console.WriteLine("Edit Product");
@@ -1636,7 +1636,7 @@ internal class UI
         Console.ReadKey(true);
     }
 
-    private async Task AddProduct()
+    private async Task AddProduct() //lägg till produkter i db
     {
         Console.Clear();
         Console.WriteLine("Add Product\n");
@@ -1739,7 +1739,7 @@ internal class UI
         }
 
         
-        do
+        do 
         {
             Console.Write("SKU: ");
             prod.SKU = Console.ReadLine()?.Trim();

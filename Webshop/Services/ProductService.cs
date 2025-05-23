@@ -24,7 +24,7 @@ internal class ProductService : IProductService
         _dbContext = context;
     }
     #region Products
-    public async Task<Product?> GetProductAsync(int id)
+    public async Task<Product?> GetProductAsync(int id) //hämta produkter
     {
         return await _dbContext.Products
             .Include(p => p.Category)
@@ -42,7 +42,7 @@ internal class ProductService : IProductService
          || EF.Functions.Like(p.Supplier.CompanyName, inputLike)).ToListAsync();
     }
 
-    public async Task<List<Product>> GetAllProducts()
+    public async Task<List<Product>> GetAllProducts() //hämta alla produkter
     {
          
         return await _dbContext.Products
@@ -51,7 +51,7 @@ internal class ProductService : IProductService
             .ToListAsync();
     }
 
-    public async Task<(bool Success, string Message)> AddProductAsync(Product product)
+    public async Task<(bool Success, string Message)> AddProductAsync(Product product) // lägga till produkt
     {
         try
         {
@@ -81,7 +81,7 @@ internal class ProductService : IProductService
             return (false, $"Error adding product: {fullMessage}");
         }
     }
-    public async Task<(bool Success, string Message)> UpdateProductAsync(Product product)
+    public async Task<(bool Success, string Message)> UpdateProductAsync(Product product) // uppdatera produkt
     {
         try
         {
@@ -110,7 +110,7 @@ internal class ProductService : IProductService
 
     }
 
-    public async Task<(bool Success, string Message)> DeleteProductAsync(int productId)
+    public async Task<(bool Success, string Message)> DeleteProductAsync(int productId) // ta bort produkt
     {
         try
         {
@@ -136,7 +136,7 @@ internal class ProductService : IProductService
         }
     }
 
-    public async Task SwitchIsActive(int prodId)
+    public async Task SwitchIsActive(int prodId) // aktivera/deaktivera produkt från featured product list
     {
         var product = await _dbContext.Products
             .FirstOrDefaultAsync(p => p.Id == prodId);

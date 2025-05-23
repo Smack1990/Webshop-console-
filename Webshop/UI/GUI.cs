@@ -15,7 +15,7 @@ internal class GUI
         _dbContext = context;
     }
 
-    public async Task PrintBanner()
+    public async Task PrintBanner() //skriver ut loggan
     {
         const string banner = @"
   ____  _ _             _                 
@@ -27,7 +27,7 @@ internal class GUI
         Console.ForegroundColor = ConsoleColor.DarkYellow; Console.Write(banner);Console.ResetColor();
     }
 
-    public async Task<char> PromptMenu(string title, string commaSeparatedChoices)
+    public async Task<char> PromptMenu(string title, string commaSeparatedChoices) //metod för att prompta switchmenyer
     {
         
         var choices = commaSeparatedChoices

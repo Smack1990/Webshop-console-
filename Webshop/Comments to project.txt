@@ -11,10 +11,10 @@ https://spectreconsole.net/
 Jag har även lagt till BCrypt.Net-next för att hantera hashning av lösenord som görs vid registrering och inloggning.
 https://learn.microsoft.com/en-us/answers/questions/939712/how-do-i-check-the-password-entered-by-the-user-bc?page=2#answers
 
-Programmet är skrivet Async hela vägen. Det kan finnas någon synkron metod som jag missat. Alternativt någon metod som inte har en await och därför är synkron. 
+Programmet är skrivet Async hela vägen. Det kan finnas någon enstaka synkron metod som jag missat. Alternativt någon metod som inte har en await och därför är synkron. 
 
 Databasen är uppbyggt med Code-First med virtual för lazy loading.
-Men för att göra det tydligare för mig själv och förstå vad som händer så har jag använt mig av include() i för hämta datan. (eager loading).
+Men för att göra det tydligare för mig själv och förstå vad som händer så har jag använt mig av include() för hämta datan. (eager loading).
 Jag upplevde att det va lite svårt att förstå hur det hängde ihop när jag bara använde lazy loading.
 Så för tränings skull och för att göra det tydligare så blev det såhär. 
 
@@ -23,8 +23,8 @@ Så för tränings skull och för att göra det tydligare så blev det såhär.
 Saker att ta med sig från projektet:
 1. Börja inte bygga för mycket innan man kör programmet. Använd MVP(minimum viable product) och börja testa och bygg sedan ut. 
 - Blev lite svårhanterligt när jag hade byggt hela baksidan utan att ha testat något och stod dessutom kvar med en del metoder som inte användes.
-2. Att uppdatera UI/GUI med ett för mig nytt nugetpaket sent in är ingen kanonídé. 
--Tog väldigt många timmar att bara hantera och få det att fungera. Det va lite mer att ändra än jag väntade mig. 
+2. Att uppdatera UI/GUI med ett för mig nytt nugetpaketm sent in är ingen kanonídé. 
+-Tog väldigt många timmar att bara lära sig skriva det och sen få det att fungera. Det va lite mer att ändra än jag väntade mig. 
 3.Async/Await är kanon. 
 -När man väl landat i hur det fungerar och hur man skriver det på rätt sätt så är det högst effektivt. 
 Enda nackdelen jag kan uppleva är att det ibland kan krocka lite med utskrifterna och när/vart dem leveras ut i konsollen.
@@ -34,6 +34,14 @@ Enda nackdelen jag kan uppleva är att det ibland kan krocka lite med utskrifter
 https://learn.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-9.0
 https://learn.microsoft.com/dotnet/core/extensions/dependency-injection#service-lifetimes
 länk till sida för depenci injection och hantering av tjänstlivslängden av varje scope. 
+
+efter att ha pratat med började jag kika på dto och funktionerna till Data Transfer Object.
+DTO används primärt för att avskärma information och entiterna i sig från klienterna.
+https://learn.microsoft.com/en-us/aspnet/web-api/overview/data/using-web-api-with-entity-framework/part-5
+Jag har valt att inte implementera DTO, då ombyggnaden och kompliciteten kring det hade tagit för lång tid att implementera och sätta sig in i helt. 
+
+
+
 
 
 
