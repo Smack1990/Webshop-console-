@@ -7,6 +7,7 @@ using Webshop.Models;
 using Webshop.Data;
 using Microsoft.EntityFrameworkCore;
 using Webshop.Services.Interfaces;
+using Webshop.Models.DTO;
 
 namespace Webshop.Services;
 internal class SupplierService : ISupplierService
@@ -85,9 +86,19 @@ internal class SupplierService : ISupplierService
         }
     }
 
-    public async Task<List<Supplier>> GetAllSuppliersAsync() //hämta alla leverantörer
+
+    public async Task<List<SupplierDTO>> GetAllSupplierDTOAsync() //hämta alla leverantörer
     {
-        return _dbContext.Suppliers.ToList();
+        return await _dbContext.Suppliers
+            .Select(s => new SupplierDTO
+            {
+                Id = s.Id,
+                CompanyName = s.CompanyName ?? "",
+                Email = s.Email ?? "",
+                PhoneNumber = s.PhoneNumber ?? "",
+                Address = s.Address ?? ""
+            })
+            .ToListAsync();
     }
 
     public async Task DeleteSuppliers(int id)

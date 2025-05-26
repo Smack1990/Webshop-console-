@@ -19,7 +19,7 @@ public class OrderItem
 
     public int Quantity { get; set; } // Antal av produkten i beställningen
 
-    //[Column(TypeName = "decimal(18,2)")]
+   
     public decimal UnitPrice { get; set; } // Enhetspris för produkten vid beställningstillfället
 
 }

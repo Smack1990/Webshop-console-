@@ -15,6 +15,7 @@ using Spectre.Console;
 using System.Runtime.InteropServices;
 using System.Net.NetworkInformation;
 using Webshop.Services.Interfaces;
+using Webshop.Models.DTO;
 
 
 namespace Webshop.UI;
@@ -146,6 +147,7 @@ internal class UI
                     e.Contains("@") //Kontrollerar att emailen innehåller "@"
                         ? ValidationResult.Success()
                         : ValidationResult.Error("[red]Ogiltig e-postadress[/]"))
+                
         );
 
         //Skriver ut lösenordet dolt med "*"
@@ -166,7 +168,7 @@ internal class UI
         else
         {
             Console.WriteLine(message + "\n");
-            Task.Delay(1500);
+            await Task.Delay(1500);
         }
     }
 
@@ -206,7 +208,7 @@ internal class UI
         {
 
             if (!mail.Contains("@"))
-                return ValidationResult.Error("[red]Invalid email address[/]");
+                return ValidationResult.Error("[red]Invalid email. Must contain @ and . [/]");
 
 
             var taken = _registration.CheckIfEmailExistAsync(mail)
@@ -310,7 +312,7 @@ internal class UI
             Console.SetCursorPosition(98, 5); Console.Write($"Welcome, {_currentCustomer.FirstName}!");
             await ShowLogins();
             await DrawFeaturedProducts();
-
+            Console.WriteLine("");
             var key = await _gui.PromptMenu("Select an option", "1. View Categories and products, 2. View Cart, 3. View Orders, 4. Checkout, 5. Logout, 6.Back");
 
             Console.WriteLine();
@@ -371,7 +373,7 @@ internal class UI
 
     private async Task DrawFeaturedProducts()
     {
-        var products = _productService.GetAllProducts().Result
+        var products = _productService.GetAllProductDtosAsync().Result
             .Where(p => p.IsActive)
             .Take(3)
             .ToList();
@@ -449,7 +451,7 @@ internal class UI
         
         Console.CursorVisible = false;
 
-        var categories = await _categoryService.GetAllProductCategoriesAsync();
+        var categories = await _categoryService.GetAllProductCategoriesDtosAsync();
         while (true)
         {
             AnsiConsole.Clear();
@@ -479,7 +481,7 @@ internal class UI
             if (char.IsDigit(key) && (key - '0') is int idx && idx >= 1 && idx <= categories.Count)
             {
                 var cat = categories[idx - 1];
-                var products = await _productService.GetAllProducts();
+                var products = await _productService.GetAllProductDtosAsync();
 
                 var prod = products
                    .Where(p => p.ProductCategoryId == cat.Id)
@@ -500,7 +502,7 @@ internal class UI
                         Console.WriteLine(
                                           $"{p.Id,-4} " +
                                           $"{p.Name,-30} " +
-                                          $"{p.Supplier.CompanyName,-30} " +
+                                          $"{p.SupplierName, -30} " +
                                           $"{p.Price,20:C} " +
                                           $"{stockDisp,10}"
 
@@ -978,7 +980,7 @@ internal class UI
                 Console.WriteLine(
                                   $"{p.Id,-4} " +
                                   $"{p.Name,-30} " +
-                                  $"{p.Supplier.CompanyName,-30} " +
+                                  $"{p.SupplierName,-30} " +
                                   $"{p.Price,20:C} " +
                                   $"{p.Stock,10}"
                               );
@@ -1186,8 +1188,8 @@ internal class UI
                     Console.Write("Enter ID to delete: ");
                     if (int.TryParse(Console.ReadLine(), out int deleteId))
                     {
-                        await _customerService.DeleteCustomerAsync(deleteId);
-                        Console.WriteLine("Customer deleted.");
+                        var message = await _customerService.DeleteCustomerAsync(deleteId, _currentCustomer.Id);
+                        Console.WriteLine(message.message);
                     }
                     break;
 
@@ -1195,7 +1197,7 @@ internal class UI
                     Console.Write("Enter ID to toggle admin: ");
                     if (int.TryParse(Console.ReadLine(), out int AdminId))
                     {
-                        var (ok, m) = await _customerService.AdminHandelingOnIDAsync(AdminId);
+                        var (ok, m) = await _customerService.AdminRightsHandelingAsync(AdminId, _currentCustomer.Id);
                         Console.WriteLine(m);
                     }
                     break;
@@ -1348,7 +1350,7 @@ internal class UI
                     Console.WriteLine("Edit a supplier");
                     if (CancelMethod())
                         break;
-                    var result = _supplierService.GetAllSuppliersAsync().GetAwaiter().GetResult();
+                    var result = _supplierService.GetAllSupplierDTOAsync().GetAwaiter().GetResult();
                     result.ForEach(s => Console.WriteLine($"  {s.Id}. {s.CompanyName}"));
                     Console.Write("ID to edit: ");
                     if (!int.TryParse(Console.ReadLine(), out int sid)) break;
@@ -1370,7 +1372,7 @@ internal class UI
                     Console.WriteLine("Delete a supplier");
                     if (CancelMethod())
                         break;
-                    var res = _supplierService.GetAllSuppliersAsync().GetAwaiter().GetResult();
+                    var res = _supplierService.GetAllSupplierDTOAsync().GetAwaiter().GetResult();
                     res.ForEach(s => Console.WriteLine($"  {s.Id}. {s.CompanyName}"));
                     Console.Write("ID to delete: ");
                     if (!int.TryParse(Console.ReadLine(), out int did)) break;
@@ -1378,7 +1380,7 @@ internal class UI
                     Console.WriteLine(dres.message);
                     break;
                 case '4':
-                    var suppliers = _supplierService.GetAllSuppliersAsync().GetAwaiter().GetResult();
+                    var suppliers = _supplierService.GetAllSupplierDTOAsync().GetAwaiter().GetResult();
                     suppliers.ForEach(s => Console.WriteLine($"  {s.Id}. {s.CompanyName} – {s.Email}, {s.PhoneNumber}"));
                     break;
                 case '6':
@@ -1433,7 +1435,7 @@ internal class UI
                     if (CancelMethod())
                         break;
 
-                    var categories = await _categoryService.GetAllProductCategoriesAsync();
+                    var categories = await _categoryService.GetAllProductCategoriesDtosAsync();
                     categories.ForEach(c => Console.WriteLine($"  {c.Id}. {c.CategoryName}"));
                     Console.Write("Category ID to edit: ");
                     if (!int.TryParse(Console.ReadLine(), out int cid)) break;
@@ -1445,14 +1447,14 @@ internal class UI
                     Console.WriteLine(updateCategory.message);
                     break;
                 case '3':
-                    var result = await _categoryService.GetAllProductCategoriesAsync();
+                    var result = await _categoryService.GetAllProductCategoriesDtosAsync();
                     foreach (var c in result)
                         Console.WriteLine($"  {c.Id}. {c.CategoryName} – {c.Description}");
 
 
                     break;
                 case '4':
-                    var categories1 = await _categoryService.GetAllProductCategoriesAsync();
+                    var categories1 = await _categoryService.GetAllProductCategoriesDtosAsync();
                     categories1.ForEach(c => Console.WriteLine($"  {c.Id}. {c.CategoryName}"));
                     Console.Write("Category ID to Delete: ");
                     if (!int.TryParse(Console.ReadLine(), out int cid1)) break;
@@ -1493,7 +1495,7 @@ internal class UI
         if (CancelMethod())
             return;
 
-        var products = await _productService.GetAllProducts();
+        var products = await _productService.GetAllProductDtosAsync();
         products.ForEach(p => Console.WriteLine($"{p.Id} - {p.Name}"));
         Console.Write("Enter Product ID: ");
         if (!int.TryParse(Console.ReadLine(), out var productId))
@@ -1503,8 +1505,8 @@ internal class UI
             return;
         }
 
-        var prod = await _productService.GetProductAsync(productId);
-        if (prod == null)
+        var dtoProd = await _productService.GetProductForUpdateAsync(productId);
+        if (dtoProd == null)
         {
             Console.WriteLine("Product not found.");
             Console.ReadKey(true);
@@ -1522,98 +1524,98 @@ internal class UI
             case '1':
                 if (CancelMethod())
                     break;
-                Console.Write($"New Name (current: {prod.Name}): ");
+                Console.Write($"New Name (current: {dtoProd.Name}): ");
                 input = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(input)) prod.Name = input;
+                if (!string.IsNullOrWhiteSpace(input)) dtoProd.Name = input;
                 break;
 
             case '2':
                 if (CancelMethod())
                     break;
-                Console.Write($"New Description (current: {prod.Description}): ");
+                Console.Write($"New Description (current: {dtoProd.Description}): ");
                 input = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(input)) prod.Description = input;
+                if (!string.IsNullOrWhiteSpace(input)) dtoProd.Description = input;
                 break;
 
             case '3':
                 if (CancelMethod())
                     break;
-                Console.Write($"New Price (current: {prod.Price}): ");
+                Console.Write($"New Price (current: {dtoProd.Price}): ");
                 input = Console.ReadLine();
-                if (decimal.TryParse(input, out var newPrice)) prod.Price = newPrice;
+                if (decimal.TryParse(input, out var newPrice)) dtoProd.Price = newPrice;
                 break;
 
             case '4':
                 if (CancelMethod())
                     break;
-                Console.Write($"New Stock (current: {prod.Stock}): ");
+                Console.Write($"New Stock (current: {dtoProd.Stock}): ");
                 input = Console.ReadLine();
-                if (int.TryParse(input, out var newStock)) prod.Stock = newStock;
+                if (int.TryParse(input, out var newStock)) dtoProd.Stock = newStock;
                 break;
 
             case '5':
                 if (CancelMethod())
                     break;
-                Console.Write($"Is Active? (current: {prod.IsActive}) [y/n]: ");
+                Console.Write($"Is Active? (current: {dtoProd.IsActive}) [y/n]: ");
                 var keyYorN = Console.ReadKey(intercept: true).KeyChar;
-                prod.IsActive = (keyYorN == 'y' || keyYorN == 'Y');
+                dtoProd.IsActive = (keyYorN == 'y' || keyYorN == 'Y');
                 Console.WriteLine();
                 break;
             case '6':
-                var cat = await _categoryService.GetAllProductCategoriesAsync();
+                var cat = await _categoryService.GetAllProductCategoriesDtosAsync();
                 Console.WriteLine("\nCategories");
                 cat.ForEach(c => Console.WriteLine($"{c.Id} - {c.CategoryName}"));
 
                 Console.Write("Choose category ID: ");
-                prod.ProductCategoryId = int.Parse(Console.ReadLine());
+                dtoProd.ProductCategoryId = int.Parse(Console.ReadLine());
                 break;
             case '7':
                 if (CancelMethod())
                     break;
-                var currentName = prod.Supplier?.CompanyName ?? "[ingen leverantör]";
-                var suppliers = await _supplierService.GetAllSuppliersAsync();
+                
+                var suppliers = await _supplierService.GetAllSupplierDTOAsync();
                 Console.WriteLine("\nSuppliers");
                 suppliers.ForEach(s => Console.WriteLine($"{s.Id} - {s.CompanyName}"));
                 Console.Write("Choose supplier ID: ");
-                prod.SupplierId = int.Parse(Console.ReadLine());
+                dtoProd.SupplierId = int.Parse(Console.ReadLine());
                 break;
             case '8':
                 if (CancelMethod())
                     break;
-                Console.Write($"New SKU (Current: {prod.SKU}): ");
+                Console.Write($"New SKU (Current: {dtoProd.SKU}): ");
                 input = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(input)) prod.SKU = input;
+                if (!string.IsNullOrWhiteSpace(input)) dtoProd.SKU = input;
                 break;
             case '9':
                 if (CancelMethod())
                     break;
-                Console.Write($"Name ({prod.Name}): ");
+                Console.Write($"Name ({dtoProd.Name}): ");
                 input = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(input)) prod.Name = input;
+                if (!string.IsNullOrWhiteSpace(input)) dtoProd.Name = input;
 
-                Console.Write($"Description ({prod.Description}): ");
+                Console.Write($"Description ({dtoProd.Description}): ");
                 input = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(input)) prod.Description = input;
+                if (!string.IsNullOrWhiteSpace(input)) dtoProd.Description = input;
 
-                Console.Write($"Price ({prod.Price}): ");
+                Console.Write($"Price ({dtoProd.Price}): ");
                 input = Console.ReadLine();
-                if (decimal.TryParse(input, out newPrice)) prod.Price = newPrice;
+                if (decimal.TryParse(input, out newPrice)) dtoProd.Price = newPrice;
 
-                Console.Write($"Stock (Current: {prod.Stock}): ");
+                Console.Write($"Stock (Current: {dtoProd.Stock}): ");
                 input = Console.ReadLine();
-                if (int.TryParse(input, out newStock)) prod.Stock = newStock;
+                if (int.TryParse(input, out newStock)) dtoProd.Stock = newStock;
 
-                Console.Write($"Is Active? ({prod.IsActive}) [y/n]: ");
+                Console.Write($"Is Active? ({dtoProd.IsActive}) [y/n]: ");
                 key = Console.ReadKey(intercept: true).KeyChar;
-                prod.IsActive = (key == 'y' || key == 'Y');
+                dtoProd.IsActive = (key == 'y' || key == 'Y');
 
 
-                Console.Write($"New Description (current: {prod.Supplier.CompanyName}): ");
+                Console.Write($"New Description (current: {dtoProd.Description}): ");
                 input = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(input)) prod.Supplier.CompanyName = input;
-                Console.Write($"New SKU (Current: {prod.SKU}): ");
+                if (!string.IsNullOrWhiteSpace(input)) dtoProd.Description = input;
+                Console.Write($"New SKU (Current: {dtoProd.SKU}): ");
                 input = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(input)) prod.SKU = input;
+                if (!string.IsNullOrWhiteSpace(input)) dtoProd.SKU = input;
                 break;
             case 'd':
                 var message1 = await _productService.DeleteProductAsync(productId);
@@ -1630,8 +1632,8 @@ internal class UI
         }
 
        
-        var (success, message) = await _productService.UpdateProductAsync(prod);
-        Console.WriteLine(message);
+        var message = await _productService.UpdateProductAsync(dtoProd);
+        Console.WriteLine(message.Message);
         Console.WriteLine("Press any key to continue...");
         Console.ReadKey(true);
     }
@@ -1645,36 +1647,43 @@ internal class UI
         if (CancelMethod()) return;
 
         var prod = new Product();
+        var inputName = "";
+        var inputDesc = "";
+        decimal price = 0;
+        int newStock = 0;
+        bool isActiveFlag = false;
+        int chosenCategoryId = 0;
+        int chosenSupplierId = 0;
+        string inputSku = "";
 
-        
         do
         {
             Console.Write("Name: ");
-            prod.Name = Console.ReadLine()?.Trim();
-            if (string.IsNullOrWhiteSpace(prod.Name))
+            inputName = Console.ReadLine()?.Trim();
+            if (string.IsNullOrWhiteSpace(inputName))
                 AnsiConsole.MarkupLine("[red]Name cannot be empty[/]");
-        } while (string.IsNullOrWhiteSpace(prod.Name));
+        } while (string.IsNullOrWhiteSpace(inputName));
 
        
         do
         {
             Console.Write("Description: ");
-            prod.Description = Console.ReadLine()?.Trim();
-            if (string.IsNullOrWhiteSpace(prod.Description))
+            inputDesc = Console.ReadLine()?.Trim();
+            if (string.IsNullOrWhiteSpace(inputDesc))
                 AnsiConsole.MarkupLine("[red]Description cannot be empty[/]");
-        } while (string.IsNullOrWhiteSpace(prod.Description));
+        } while (string.IsNullOrWhiteSpace(inputDesc));
 
       
-        decimal price;
+        
         do
         {
             Console.Write("Price: ");
-            var input = Console.ReadLine();
+            var input  = Console.ReadLine();
             if (decimal.TryParse(input, out price) && price > 0)
                 break;
             AnsiConsole.MarkupLine("[red]Invalid price. Enter a number > 0[/]");
         } while (true);
-        prod.Price = price;
+        price = price;
 
        
         int stock;
@@ -1686,10 +1695,10 @@ internal class UI
                 break;
             AnsiConsole.MarkupLine("[red]Invalid stock. Enter 0 or a positive integer[/]");
         } while (true);
-        prod.Stock = stock;
+         newStock = stock;
 
        
-        var categories = await _categoryService.GetAllProductCategoriesAsync();
+        var categories = await _categoryService.GetAllProductCategoriesDtosAsync();
         Console.WriteLine("\nCategories:");
         categories.ForEach(c => Console.WriteLine($" {c.Id}. {c.CategoryName}"));
         int catId;
@@ -1702,10 +1711,10 @@ internal class UI
                 break;
             AnsiConsole.MarkupLine("[red]Invalid category ID. Pick one from the list[/]");
         } while (true);
-        prod.ProductCategoryId = catId;
+        chosenCategoryId = catId;
 
        
-        var suppliers = await _supplierService.GetAllSuppliersAsync();
+        var suppliers = await _supplierService.GetAllSupplierDTOAsync();
         Console.WriteLine("\nSuppliers:");
         suppliers.ForEach(s => Console.WriteLine($" {s.Id}. {s.CompanyName}"));
         int supId;
@@ -1718,7 +1727,7 @@ internal class UI
                 break;
             AnsiConsole.MarkupLine("[red]Invalid supplier ID. Pick one from the list[/]");
         } while (true);
-        prod.SupplierId = supId;
+        chosenSupplierId = supId;
 
         Console.Write("Is Active? (y/n): ");
         while (true)
@@ -1726,13 +1735,13 @@ internal class UI
             var key = Console.ReadKey(intercept: true).KeyChar;
             if (key == 'y' || key == 'Y')
             {
-                prod.IsActive = true;
+                isActiveFlag = true;
                 Console.WriteLine(" Y");
                 break;
             }
             if (key == 'n' || key == 'N')
             {
-                prod.IsActive = false;
+                isActiveFlag = false;
                 Console.WriteLine(" N");
                 break;
             }
@@ -1742,14 +1751,24 @@ internal class UI
         do 
         {
             Console.Write("SKU: ");
-            prod.SKU = Console.ReadLine()?.Trim();
-            if (string.IsNullOrWhiteSpace(prod.SKU))
+            inputSku = Console.ReadLine()?.Trim();
+            if (string.IsNullOrWhiteSpace(inputSku))
                 Console.WriteLine("[red]SKU cannot be empty[/]");
-        } while (string.IsNullOrWhiteSpace(prod.SKU));
+        } while (string.IsNullOrWhiteSpace(inputSku));
+        var createDto = new CreateProductDTO
+        {
+            Name = inputName,
+            Description = inputDesc,
+            Price = price,
+            Stock = newStock,
+            IsActive = isActiveFlag,
+            ProductCategoryId = chosenCategoryId,
+            SupplierId = chosenSupplierId,
+            SKU = inputSku
+        };
 
-        
-        var (success, message) = await _productService.AddProductAsync(prod);
-        Console.WriteLine($"\n{message}");
+        var message = await _productService.AddProductAsync(createDto);
+        Console.WriteLine($"\n{message.Message}");
         AnsiConsole.MarkupLine("Press any key to continue…");
         Console.ReadKey(true);
     }

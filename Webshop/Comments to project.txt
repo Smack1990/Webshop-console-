@@ -20,6 +20,29 @@ Så för tränings skull och för att göra det tydligare så blev det såhär.
 
 
 
+
+Jag implementerade Dependency Injection i projektet för att hantera tjänster och beroenden mellan objekt samt deras livslängd.
+Det är en bra metod för att separera ansvar och göra koden mer testbar och underhållbar.
+Det är också en bra metod för att hantera beroenden mellan olika delar av applikationen.
+Passar en applikation byggd med flera lager.
+Dependency Injection är ett steg i rätt riktning för att följa SOLID-principerna, särskilt Single Responsibility Principle (SRP) och Dependency Inversion Principle (DIP).
+
+https://learn.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-9.0
+https://learn.microsoft.com/dotnet/core/extensions/dependency-injection#service-lifetimes
+länk till sida för depenci injection och hantering av tjänstlivslängden av varje scope. 
+
+efter att ha pratat med Mikael började jag kika på dto och funktionerna till Data Transfer Object.
+DTO används primärt för att avskilja affärslogik från datamodellen och för att optimera dataöverföringen mellan klient och server.
+DTO:er kan också användas för att minska antalet anrop till servern genom att skicka mer data i ett enda anrop, vilket kan förbättra prestanda och minska latens.
+DTO:er är också användbara för att skapa en tydlig gränssnitt mellan olika lager i applikationen, vilket kan underlätta testning och underhåll.
+https://learn.microsoft.com/en-us/aspnet/web-api/overview/data/using-web-api-with-entity-framework/part-5
+
+Jag började att smått implementera några enstaka DTO's och skapade även två klasser för att kunna uppdatera och lägga till data via DTO.
+Jag valde att prova på dem lättaste och mest grundläggande klasserna för att se hur det skulle fungera.
+Upptäckte dock att det blev väldigt mycket att bygga om när man implementerar det så här sent, så nöjer mig med det lilla jag fått till. 
+Product DTO är helt klar, men Suppleir och productcategory har också fått varsina dto metoder.
+Allt är uppdaterat i UI så att inga anrop körs mot de gamla metoderna utan mot de nya DTO metoderna.
+
 Saker att ta med sig från projektet:
 1. Börja inte bygga för mycket innan man kör programmet. Använd MVP(minimum viable product) och börja testa och bygg sedan ut. 
 - Blev lite svårhanterligt när jag hade byggt hela baksidan utan att ha testat något och stod dessutom kvar med en del metoder som inte användes.
@@ -28,17 +51,6 @@ Saker att ta med sig från projektet:
 3.Async/Await är kanon. 
 -När man väl landat i hur det fungerar och hur man skriver det på rätt sätt så är det högst effektivt. 
 Enda nackdelen jag kan uppleva är att det ibland kan krocka lite med utskrifterna och när/vart dem leveras ut i konsollen.
-4.
-
-
-https://learn.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-9.0
-https://learn.microsoft.com/dotnet/core/extensions/dependency-injection#service-lifetimes
-länk till sida för depenci injection och hantering av tjänstlivslängden av varje scope. 
-
-efter att ha pratat med började jag kika på dto och funktionerna till Data Transfer Object.
-DTO används primärt för att avskärma information och entiterna i sig från klienterna.
-https://learn.microsoft.com/en-us/aspnet/web-api/overview/data/using-web-api-with-entity-framework/part-5
-Jag har valt att inte implementera DTO, då ombyggnaden och kompliciteten kring det hade tagit för lång tid att implementera och sätta sig in i helt. 
 
 
 

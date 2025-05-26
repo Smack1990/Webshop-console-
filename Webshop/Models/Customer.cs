@@ -18,7 +18,7 @@ public class Customer
     public string? ZipCode { get; set; } // Postnummer till kunden
     public string? Password { get; set; } // Lösenord till kunden
     public bool IsAdmin { get; set; } = false; // Om kunden är admin, sätts till true via adminpanelen
-    public DateTime RegistrationDate { get; set; } = DateTime.Now; // Registreringsdatum för kunden
+    //public DateTime RegistrationDate { get; set; } = DateTime.Now; // Registreringsdatum för kunden // lägg till om man vill ha med datum för registrering
     public int Sitevisit { get; set; } // Antal besök på sidan
 
     public virtual Cart Cart { get; set; } // Navigation property till Cart

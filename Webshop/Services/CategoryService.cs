@@ -7,6 +7,7 @@ using Webshop.Models;
 using Webshop.Data;
 using Microsoft.EntityFrameworkCore;
 using Webshop.Services.Interfaces;
+using Webshop.Models.DTO;
 namespace Webshop.Services;
 internal class CategoryService : ICategoryService
 {
@@ -51,9 +52,19 @@ internal class CategoryService : ICategoryService
             return (false, "An error occured" + e.Message);
         }
     }
-    public async Task<List<ProductCategory>> GetAllProductCategoriesAsync() //Hämta alla kategorier
+
+
+    public async Task<List<ProductCategoryDTO>> GetAllProductCategoriesDtosAsync()
+    //Hämta alla kategorier med DTO
     {
-        return _dbContext.ProductCategories.ToList();
+        return await _dbContext.ProductCategories
+            .Select(c => new ProductCategoryDTO
+            {
+                Id = c.Id,
+                CategoryName = c.CategoryName ?? "",
+                Description = c.Description ?? ""
+            })
+            .ToListAsync();
     }
     public async Task<(bool success, string message)> DeleteCategory(int categoryId)
     {

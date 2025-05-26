@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Webshop.Data;
 using Webshop.Models;
+using Webshop.Models.DTO;
 using Webshop.Services.Interfaces;
 using Webshop.UI;
 
@@ -24,116 +25,130 @@ internal class ProductService : IProductService
         _dbContext = context;
     }
     #region Products
-    public async Task<Product?> GetProductAsync(int id) //hämta produkter
+    public async Task<ProductDTO?> GetProductAsync(int id) //hämta produkter
     {
         return await _dbContext.Products
-            .Include(p => p.Category)
-            .Include(p => p.Supplier)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .Where(p => p.Id == id)
+            .Select(p => new ProductDTO
+            {
+                Id = p.Id,
+                Name = p.Name ?? "",
+                Description = p.Description ?? "",
+                Price = p.Price,
+                Stock = p.Stock,
+                SKU = p.SKU,
+                CreatedDate = p.CreatedDate,
+                IsActive = p.IsActive,
+                QuantitySold = p.QuantitySold,
+                CategoryName = p.Category.CategoryName,
+                SupplierName = p.Supplier.CompanyName,
+                ProductCategoryId = p.ProductCategoryId
+            })
+        .FirstOrDefaultAsync();
     }
-    public async Task<List<Product?>> GetProductByName(string input)
+    public async Task<List<ProductDTO?>> GetProductByName(string input)
     {
-        var inputLike =  $"%{input}%";
+        var likeInput = $"%{input}%";
         return await _dbContext.Products
-            .Include(p => p.Category)
-            .Include(p => p.Supplier)
             .Where(p =>
-            EF.Functions.Like(p.Name, inputLike)
-         || EF.Functions.Like(p.Supplier.CompanyName, inputLike)).ToListAsync();
+                EF.Functions.Like(p.Name!, likeInput) ||
+                EF.Functions.Like(p.Supplier.CompanyName, likeInput))
+            .Select(p => new ProductDTO
+            {
+                Id = p.Id,
+                Name = p.Name ?? "",
+                Description = p.Description ?? "",
+                Price = p.Price,
+                Stock = p.Stock,
+                SKU = p.SKU,
+                CreatedDate = p.CreatedDate,
+                IsActive = p.IsActive,
+                QuantitySold = p.QuantitySold,
+                CategoryName = p.Category.CategoryName,
+                SupplierName = p.Supplier.CompanyName,
+                ProductCategoryId = p.ProductCategoryId
+            })
+            .ToListAsync();
     }
 
-    public async Task<List<Product>> GetAllProducts() //hämta alla produkter
+    public async Task<List<Product>> GetAllProductsAsync() //hämta alla produkter
     {
-         
+
         return await _dbContext.Products
             .Include(p => p.Category)
             .Include(p => p.Supplier)
             .ToListAsync();
     }
 
-    public async Task<(bool Success, string Message)> AddProductAsync(Product product) // lägga till produkt
+    public async Task<(bool Success, string Message)> AddProductAsync(CreateProductDTO dto) // lägga till produkt
     {
+        var product = new Product
+        {
+            Name = dto.Name.Trim(),
+            Description = dto.Description.Trim(),
+            Price = dto.Price,
+            Stock = dto.Stock,
+            IsActive = dto.IsActive,
+            ProductCategoryId = dto.ProductCategoryId,
+            SupplierId = dto.SupplierId,
+            SKU = dto.SKU.Trim(),
+            CreatedDate = DateTime.UtcNow,
+            QuantitySold = 0
+        };
+
+        // 2) Validate
+        if (string.IsNullOrWhiteSpace(product.Name))
+            return (false, "Product name is required");
+        if (product.Price <= 0)
+            return (false, "Price must be greater than 0");
+        if (product.Stock < 0)
+            return (false, "Stock quantity cannot be negative");
+
+        // (Optionally validate foreign‐keys exist here)
+
+        // 3) Persist
         try
         {
-            if (string.IsNullOrWhiteSpace(product.Name))
-                return (false, "Product name is required");
-
-            if (product.Price <= 0)
-                return (false, "Price must be greater than 0");
-
-            if (product.Stock< 0)
-                return (false, "Stock quantity cannot be negative");
-
-           await _dbContext.Products.AddAsync(product);
+            await _dbContext.Products.AddAsync(product);
             await _dbContext.SaveChangesAsync();
-            return (true, "Product added successfully");
+            return (true, $"Product '{product.Name}' added (ID = {product.Id})");
+        }
+        catch (DbUpdateException dbEx)
+        {
+            // unwrap SQL error message if you like
+            var sqlError = dbEx.InnerException?.Message;
+            var fullMsg = dbEx.Message + (sqlError != null ? $"\n→ Inner: {sqlError}" : "");
+            return (false, $"Error adding product: {fullMsg}");
         }
         catch (Exception ex)
         {
-            var dbEx = ex as Microsoft.EntityFrameworkCore.DbUpdateException;
-            var sqlError = dbEx?.InnerException?.Message;
-
-            var fullMessage = ex.Message
-                            + (sqlError != null
-                                ? $"\n→ Inner: {sqlError}"
-                                : "");
-
-            return (false, $"Error adding product: {fullMessage}");
+            return (false, $"Unexpected error: {ex.Message}");
         }
     }
-    public async Task<(bool Success, string Message)> UpdateProductAsync(Product product) // uppdatera produkt
-    {
-        try
-        {
-            var existingProduct = await _dbContext.Products.FindAsync(product.Id);
-            if (existingProduct == null)
-                return (false, "Product not found");
 
-            existingProduct.Name = product.Name;
-            existingProduct.Description = product.Description;
-            existingProduct.Price = product.Price;
-            existingProduct.Stock = product.Stock;
-            existingProduct.ProductCategoryId = product.ProductCategoryId;
-            existingProduct.SupplierId = product.SupplierId;
-            existingProduct.IsActive = product.IsActive;
-
-           await _dbContext.SaveChangesAsync();
-
-
-            return (true, "Product updated successfully");
-
-        }
-        catch(Exception e)
-        {
-            return (false, "An error occurred while updating the product: " + e.Message);
-        }
-
-    }
 
     public async Task<(bool Success, string Message)> DeleteProductAsync(int productId) // ta bort produkt
     {
-        try
-        {
-            var product = await _dbContext.Products.FindAsync(productId);
-         
+        
+        var hasOrderItems = await _dbContext.OrderItems
+            .AnyAsync(oi => oi.ProductId == productId);
+        if (hasOrderItems)
+            return (false, "Cannot delete: product is in existing orders");
 
-            var hasOrdersItems =  await _dbContext.OrderItems.AnyAsync(o => o.Id == productId);
-            if(hasOrdersItems)
-                return (false, "Product cannot be deleted with existing orders");
-            
-            var inCart = await _dbContext.CartItems
-         .AnyAsync(ci => ci.ProductId == productId);
-            if (inCart)
-                return (false, "Product cannot be deleted because it is in someone’s cart");
+       
+        var inCart = await _dbContext.CartItems
+            .AnyAsync(ci => ci.ProductId == productId);
+        if (inCart)
+            return (false, "Cannot delete: product is in someone's cart");
 
-            _dbContext.Products.Remove(product);
-            await _dbContext.SaveChangesAsync();
-            return (true, "Product removed successfully");
-        }
-        catch (Exception e)
-        {
-            return (false, "An error occurred while deleting the product: " + e.Message);
-        }
+        
+        var product = await _dbContext.Products.FindAsync(productId);
+        if (product == null)
+            return (false, "Product not found");
+
+        _dbContext.Products.Remove(product);
+        await _dbContext.SaveChangesAsync();
+        return (true, "Product removed successfully");
     }
 
     public async Task SwitchIsActive(int prodId) // aktivera/deaktivera produkt från featured product list
@@ -150,6 +165,68 @@ internal class ProductService : IProductService
         {
             Console.WriteLine($"Product with ID {prodId} not found.");
         }
+    }
+    public async Task<List<ProductDTO>> GetAllProductDtosAsync() //hämta alla produkter asynkront, skriv om till DTO'n. 
+    {
+        return await _dbContext.Products
+            .Include(p => p.Category)
+            .Include(p => p.Supplier)
+            .Select (p => new ProductDTO
+            {
+                Id = p.Id,
+                Name = p.Name ?? "",
+                Description = p.Description ?? "",
+                Price = p.Price,
+                Stock = p.Stock,
+                SKU = p.SKU,
+                CreatedDate = p.CreatedDate,
+                IsActive = p.IsActive,
+                QuantitySold = p.QuantitySold,
+                CategoryName = p.Category.CategoryName,
+                SupplierName = p.Supplier.CompanyName,
+                ProductCategoryId = p.ProductCategoryId
+
+            })
+            .ToListAsync();
+
+
+    }
+
+    public async Task<UpdateProductDTO?> GetProductForUpdateAsync(int id) //Hämmta produkt för uppdatering, skriv om till DTO
+    {
+        return await _dbContext.Products
+            .Where(p => p.Id == id)
+            .Select(p => new UpdateProductDTO
+            {
+                Id = p.Id,
+                Name = p.Name!,
+                Description = p.Description!,
+                Price = p.Price,
+                Stock = p.Stock,
+                IsActive = p.IsActive,
+                ProductCategoryId = p.ProductCategoryId,
+                SupplierId = p.SupplierId,
+                SKU = p.SKU
+            })
+            .FirstOrDefaultAsync();
+    }
+    public async Task<(bool Success, string Message)> UpdateProductAsync(UpdateProductDTO dto) //Uppdatera produkt via dto
+    {
+        var p = await _dbContext.Products.FindAsync(dto.Id);
+        if (p == null) return (false, "Product not found");
+
+       
+        p.Name = dto.Name;
+        p.Description = dto.Description;
+        p.Price = dto.Price;
+        p.Stock = dto.Stock;
+        p.IsActive = dto.IsActive;
+        p.ProductCategoryId = dto.ProductCategoryId;
+        p.SupplierId = dto.SupplierId;
+        p.SKU = dto.SKU;
+
+        await _dbContext.SaveChangesAsync();
+        return (true, "Product updated");
     }
     #endregion
 

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Webshop.Models.DTO;
 
-public record ProductDTO
+public record ProductDTO //dto för produkter. DTO (data transer objekt) är ett objekt som bär data mellan olika lager. 
 {
     public int Id { get; init; }
     public string Name { get; init; } = "";

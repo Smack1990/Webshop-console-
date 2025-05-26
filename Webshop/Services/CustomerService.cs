@@ -17,17 +17,20 @@ internal class CustomerService : ICustomerService
     {
         _dbContext = context;
     }
-    public async Task DeleteCustomerAsync(int customerId) // tar bort en kund
+    public async Task<(bool success, string message)> DeleteCustomerAsync(int customerId, int cid) // tar bort en kund
     {
 
+        if (customerId == cid)
+            return (false, "You cannot delete yourself");
+
+       
         var customer = await _dbContext.Customers.FindAsync(customerId);
-        if (customer != null)
-        {
-            _dbContext.Customers.Remove(customer);
-            await _dbContext.SaveChangesAsync();
+        if (customer == null)
+            return (false, "Customer not found");
 
-        }
-
+        _dbContext.Customers.Remove(customer);
+        await _dbContext.SaveChangesAsync();
+        return (true, "Customer deleted successfully");
     }
     public async Task<Customer?> GetCustomerCartAsync(int customerId) // hämtar kundens varukorg
     {
@@ -71,8 +74,11 @@ internal class CustomerService : ICustomerService
         }
     }
 
-    public async Task<(bool success, string message)> AdminHandelingOnIDAsync(int userId) // hantera adminrättigheter 
+    public async Task<(bool success, string message)> AdminRightsHandelingAsync(int userId, int cid) // hantera adminrättigheter 
     {
+        if(userId == cid) //kontroll om admin försöker ändra sina egna rättigheter
+            return (false, "You cannot change your own admin rights");
+
         var customer = await _dbContext.Customers.FindAsync(userId);
         if (customer == null)
             return (false, "Customer not found");
