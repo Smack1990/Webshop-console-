@@ -15,7 +15,7 @@ internal class GUI
         _dbContext = context;
     }
 
-    public async Task PrintBanner() //skriver ut loggan
+    public  Task PrintBanner() //skriver ut loggan
     {
         const string banner = @"
   ____  _ _             _                 
@@ -25,29 +25,30 @@ internal class GUI
  |____/|_|_|\_\___||___/_| |_|\___/| .__/ 
  ----------------------------------|_|---";
         Console.ForegroundColor = ConsoleColor.DarkYellow; Console.Write(banner);Console.ResetColor();
+        return Task.CompletedTask;
     }
 
-    public async Task<char> PromptMenu(string title, string commaSeparatedChoices) //metod för att prompta switchmenyer
+    public Task<char> PromptMenu(string title, string commaSeparatedChoices) //metod för att prompta switchmenyer
     {
-        
-        var choices = commaSeparatedChoices
-            .Split(',', StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => x.Trim())
-            .ToArray();
 
-        
+        var choices = commaSeparatedChoices
+             .Split(',', StringSplitOptions.RemoveEmptyEntries)
+             .Select(x => x.Trim())
+             .ToArray();
+
         var prompt = new SelectionPrompt<string>()
             .Title($"[underline][bold yellow]{title}[/][/]")
             .PageSize(choices.Length)
             .HighlightStyle(Style.Parse("cyan"))
             .AddChoices(choices);
 
-        
         var selected = AnsiConsole.Prompt(prompt);
 
-        
-        return string.IsNullOrEmpty(selected)
+        char result = string.IsNullOrEmpty(selected)
             ? '\0'
             : selected[0];
-    }}
+
+        return Task.FromResult(result);
+    }
+}
 

@@ -19,7 +19,7 @@ public class Product
 
     public decimal Price { get; set; } // Enhetspris för produkten
     public int Stock { get; set; } // Antal i lager
-    public string SKU { get; set; } // SKU (Stock Keeping Unit) för produkten
+    public string? SKU { get; set; } // SKU (Stock Keeping Unit) för produkten
 
     public DateTime CreatedDate { get; set; } // Datum för när produkten skapades
 
@@ -27,9 +27,9 @@ public class Product
     public int QuantitySold { get; set; }// Antal sålda produkter
 
     public int ProductCategoryId { get; set; }  // Foreign Key till ProductCategory
-    public virtual ProductCategory Category { get; set; } // Navigation property till ProductCategory
+    public virtual ProductCategory? Category { get; set; } // Navigation property till ProductCategory
     public int SupplierId { get; set; } // Foreign Key till Supplier
-    public virtual Supplier Supplier { get; set; } // Navigation property till Supplier
+    public virtual Supplier? Supplier { get; set; } // Navigation property till Supplier
 
     public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>(); // Lista med CartItems
     public virtual ICollection<OrderItem> Orders { get; set; } = new List<OrderItem>(); // Lista med OrderItems

@@ -12,10 +12,10 @@ public class OrderItem
 
 
     public int OrderId { get; set; } // Foreign Key till Order
-    public virtual Order Order { get; set; } // Navigation property till Order
+    public virtual Order? Order { get; set; } // Navigation property till Order
 
     public int ProductId { get; set; } // Foreign Key till Product
-    public virtual Product Product { get; set; } // Navigation property till Product
+    public virtual Product? Product { get; set; } // Navigation property till Product
 
     public int Quantity { get; set; } // Antal av produkten i beställningen
 

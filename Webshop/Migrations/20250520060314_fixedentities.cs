@@ -5,7 +5,7 @@
 namespace Webshop.Migrations
 {
     /// <inheritdoc />
-    public partial class fixedentities : Migration
+    public partial class fixedEntities : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

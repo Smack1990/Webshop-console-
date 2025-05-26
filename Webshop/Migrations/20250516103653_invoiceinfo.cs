@@ -5,7 +5,7 @@
 namespace Webshop.Migrations
 {
     /// <inheritdoc />
-    public partial class invoiceinfo : Migration
+    public partial class invoiceInfo : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

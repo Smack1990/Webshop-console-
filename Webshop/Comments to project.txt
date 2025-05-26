@@ -1,4 +1,7 @@
 ﻿
+Jag har inte lyckats få tillgång till en gratis-period hos azure. Råkade registrera med skolmailen och uddevalla kommuns organisation accepterar inte ett inlogg på azure. 
+Jag har varit i kontakt med azure men de kan tyvärr inte hjälpa mig och jag får inte skapat ett annat gratiskonto. Därav ligger inte det upplagt på azure. 
+
 
 Jag valde att prova att använda Spectre.Console för att skapa och hantera GUI lite lättare. 
 Lärdomen av det är att det är dumt att göra det när man i stort sett skrivit klart layouten för programmet. 
@@ -51,6 +54,13 @@ Saker att ta med sig från projektet:
 3.Async/Await är kanon. 
 -När man väl landat i hur det fungerar och hur man skriver det på rätt sätt så är det högst effektivt. 
 Enda nackdelen jag kan uppleva är att det ibland kan krocka lite med utskrifterna och när/vart dem leveras ut i konsollen.
+4.Lärorikt att implementera interfaces och Dependency Injection.
+- Det var väldigt lärorikt att implementera DI för att sedan slippa öppna nya instanser av DbContext i varje klass som behövde det.
+5.DTO's
+- Det tog ett tag innan jag förstod konverteringen av objekt från enititet till dto-objekt. Men när jag väl förstod vad som behövdes i metoderna för att göra det
+så blev det väldigt tydligt och enkelt att använda. 
+Svårast med DTO-hantering va mappningen av dton när man skulle uppdatera eller skapa ett databasobjekt. Istället för att direkt sätta input-värdena till entitetens värde 
+så behövde dton sköta inputhanteringen och sen mappas till entiteten.
 
 
 

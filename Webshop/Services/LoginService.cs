@@ -18,17 +18,17 @@ internal class LoginService : ILoginService
     {
         _dbContext = context;
     }
-    public async Task<(Customer, string)> AuthenticateAsync(string email, string password) //Hanterar inloggning
+    public async Task<(Customer customer, string message)> AuthenticateAsync(string email, string password) //Hanterar inloggning
     {
         var customer = await _dbContext.Customers
             .FirstOrDefaultAsync(c => c.Email == email);
 
         if (customer == null)
-            return (null, "No user found with that email.");
+            return (null!, "No user found with that email.");
 
         if (!BCrypt.Net.BCrypt.Verify(password, customer.Password)) //Hanterar läsning/verifiering av hashat lösenord
-            return (null, "Incorrect password.");
-
+            return (null!, "Incorrect password.");
+        customer.Sitevisit++;
         await _dbContext.SaveChangesAsync();
 
         return (customer, "Login successful.");

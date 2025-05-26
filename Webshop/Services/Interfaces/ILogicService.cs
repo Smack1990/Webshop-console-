@@ -14,6 +14,6 @@ internal interface ILogicService
     Task<Cart?> DeleteCartAsync(int customerid);
     Task<(bool Success, string Message)> ChangeCartProductQuantityAsync(int customerId, int productId, int newQuantity);
     Task<int> NumberOfCartItemsAsync(int id);
-    Task<List<Order>> GetOrdersFromIdAsync(int userId);
+
     Task<Customer> RefreshCartAsync(int id);
 }

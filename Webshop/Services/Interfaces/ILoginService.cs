@@ -8,5 +8,5 @@ using Webshop.Models;
 namespace Webshop.Services.Interfaces;
 internal interface ILoginService
 {
-    Task<(Customer, string)> AuthenticateAsync(string email, string password);
+    Task<(Customer customer, string message)> AuthenticateAsync(string email, string password);
 }

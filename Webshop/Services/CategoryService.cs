@@ -23,7 +23,7 @@ internal class CategoryService : ICategoryService
             if (string.IsNullOrWhiteSpace(category.CategoryName))
                 return (false, "Category name is required");
 
-            _dbContext.ProductCategories.AddAsync(category);
+           await _dbContext.ProductCategories.AddAsync(category);
             await _dbContext.SaveChangesAsync();
             return (true, "Category added successfully");
         }

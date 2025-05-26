@@ -13,7 +13,7 @@ namespace Webshop.Migrations
 {
     [DbContext(typeof(MyDbContext))]
     [Migration("20250520060314_fixedentities")]
-    partial class fixedentities
+    partial class fixedEntities
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

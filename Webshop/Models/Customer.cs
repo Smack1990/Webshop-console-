@@ -21,6 +21,6 @@ public class Customer
     //public DateTime RegistrationDate { get; set; } = DateTime.Now; // Registreringsdatum för kunden // lägg till om man vill ha med datum för registrering
     public int Sitevisit { get; set; } // Antal besök på sidan
 
-    public virtual Cart Cart { get; set; } // Navigation property till Cart
+    public virtual Cart? Cart { get; set; } // Navigation property till Cart
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>(); // Lista med Orders
 }

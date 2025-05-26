@@ -21,7 +21,7 @@ using Webshop.Models.DTO;
 namespace Webshop.UI;
 internal class UI
 {
-    private readonly MyDbContext _dbContext;
+    //private readonly MyDbContext _dbContext;
     private readonly IRegistrationService _registration;
     private readonly ILogicService _logicService;
     private readonly ILoginService _loginService;
@@ -56,6 +56,8 @@ internal class UI
         _customerService = customerService;
         _statsService = statsService;
         _gui = gui;
+        _currentCustomer = null!;                         
+        _featuredKeyMap = new Dictionary<char, int>();
     }
     #region start/login
     public async Task Start() //start av program
@@ -115,7 +117,7 @@ internal class UI
                         await CustomerMenuAsync();
                         break;
                     case '3':
-                        _currentCustomer = null;
+                        _currentCustomer = null!;
                         await Start();
                         return;
 
@@ -161,7 +163,6 @@ internal class UI
         if (customer != null)
         {
             _currentCustomer = customer;
-            _currentCustomer.Sitevisit++;
            
             Console.WriteLine($"Welcome, {customer.FirstName}!\n");
         }
@@ -294,9 +295,10 @@ internal class UI
             await RegistrationAsync();
         }
     }
-    public async Task ShowLogins() //skriver ut antalet gånger användaren varit inloggad
+    public Task ShowLogins() //skriver ut antalet gånger användaren varit inloggad
     {
         Console.SetCursorPosition(98, 6); Console.Write($"Amount of Logins: {_currentCustomer.Sitevisit}");
+        return Task.CompletedTask;
 
     }
     #endregion
@@ -354,7 +356,7 @@ internal class UI
                     break;
 
                 case '5':
-                    _currentCustomer = null;
+                    _currentCustomer = null!;
                     await Start();
 
                     return;
@@ -421,12 +423,12 @@ internal class UI
 
         var bestSelling = await _statsService.GetallProductsOrderdBybestsellingAsync(3);
 
-        foreach (var p in bestSelling) Console.Write(p.Name.PadRight(colWidth));
+        foreach (var p in bestSelling) Console.Write(p!.Name!.PadRight(colWidth));
         Console.WriteLine();
         foreach (var p in bestSelling)
         {
             Console.ForegroundColor = ConsoleColor.Magenta;
-            var desc = p.Description.Length > colWidth - 3
+            var desc = p.Description!.Length > colWidth - 3
                 ? p.Description.Substring(0, colWidth - 3) + "..."
                 : p.Description.PadRight(colWidth);
             Console.Write(desc);
@@ -585,7 +587,7 @@ internal class UI
             var lineTotal = item.Quantity * unitPrice;
             total += lineTotal;
 
-            Console.ForegroundColor = ConsoleColor.Magenta; Console.WriteLine($"{item.Product.Id,-10}{name,-10} {item.Quantity,-15}   {unitPrice,10:C}   {lineTotal,14:C}"); Console.ResetColor();
+            Console.ForegroundColor = ConsoleColor.Magenta; Console.WriteLine($"{item.Product!.Id,-10}{name,-10} {item.Quantity,-15}   {unitPrice,10:C}   {lineTotal,14:C}"); Console.ResetColor();
         }
         decimal tax = total * 0.25m;
 
@@ -631,7 +633,7 @@ internal class UI
             foreach (var item in order.OrderItems)
             {
                 Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine($"Product ID: {item.ProductId}, Product Name: {item.Product.Name}, Quantity: {item.Quantity}, Unit Price: {item.UnitPrice}, ");
+                Console.WriteLine($"Product ID: {item.ProductId}, Product Name: {item!.Product!.Name}, Quantity: {item.Quantity}, Unit Price: {item.UnitPrice:C} ");
                 Console.ResetColor();
 
             }
@@ -873,18 +875,18 @@ internal class UI
         {
             Console.Clear();
             AnsiConsole.MarkupLine("[underline][bold yellow]Your Cart[/][/]\n");
-            Console.WriteLine("ID\t Product     Qty \t\tUnit Price \t   Total");
+            Console.WriteLine("ID\t  Product   \t\t\t  Qty \t\tUnit Price \t     Total");
             Console.WriteLine(new string('-', 98));
 
             decimal total = 0;
-            foreach (var item in customer.Cart.Items)
+            foreach (var item in customer!.Cart!.Items)
             {
                 var name = item.Product?.Name ?? "Unknown";
                 var unitPrice = item.Product?.Price ?? 0;
                 var lineTotal = item.Quantity * unitPrice;
                 total += lineTotal;
 
-                Console.ForegroundColor = ConsoleColor.Magenta; Console.WriteLine($"{item.Product.Id,-10}{name,-10} {item.Quantity,-15}   {unitPrice,10:C}   {lineTotal,14:C}"); Console.ResetColor();
+                Console.ForegroundColor = ConsoleColor.Magenta; Console.WriteLine($"{item!.Product!.Id,-10}{name,-15} {item.Quantity,5}   {unitPrice,20:C}   {lineTotal,20:C}"); Console.ResetColor();
             }
 
             Console.WriteLine(new string('-', 98));
@@ -957,7 +959,7 @@ internal class UI
 
     
         Console.Write("Search: ");
-        var id = Console.ReadLine();
+        var id = Console.ReadLine()!;
 
       
         var results = await _productService.GetProductByName(id);
@@ -978,7 +980,7 @@ internal class UI
             foreach (var p in results)
             {
                 Console.WriteLine(
-                                  $"{p.Id,-4} " +
+                                  $"{p!.Id,-4} " +
                                   $"{p.Name,-30} " +
                                   $"{p.SupplierName,-30} " +
                                   $"{p.Price,20:C} " +
@@ -1002,7 +1004,7 @@ internal class UI
                     
                     Console.Write("Enter product ID: ");
                     if (int.TryParse(Console.ReadLine(), out var pid) &&
-                        results.Any(p => p.Id == pid))
+                        results.Any(p => p!.Id == pid))
                     {
                         Console.Write("Quantity: ");
                         if (int.TryParse(Console.ReadLine(), out var qty))
@@ -1129,7 +1131,7 @@ internal class UI
                 case '3':
                     Console.Clear();
                     Console.Write("Enter email: ");
-                    var email = Console.ReadLine();
+                    var email = Console.ReadLine()!;
                     var c3 = _customerService.GetCustomerByEmailAsync(email).GetAwaiter().GetResult();
                     if (c3 != null)
                     {
@@ -1203,14 +1205,8 @@ internal class UI
                     break;
 
                 case '7':
-                    Console.Write("Enter ID to view orders: ");
-                    if (int.TryParse(Console.ReadLine(), out int orderId))
-                    {
                         await GetAllCustomers();
-                        await _logicService.GetOrdersFromIdAsync(orderId);
-
-
-                    }
+                    await GetOrdersFromIdAsync();
                     break;
 
 
@@ -1227,7 +1223,74 @@ internal class UI
             Console.ReadKey(intercept: true);
         }
     }
+    public async Task GetOrdersFromIdAsync() //hämta orderhistorik på id
+    {
+      
+        
+        Console.Write("Enter ID to view orders: ");
+        if (!int.TryParse(Console.ReadLine(), out int userId))
+        {
+            Console.WriteLine("Invalid ID. Press any key and retry");
+            Console.ReadKey(true);
+            return; 
 
+
+        }
+        var customerDto = await _customerService.GetCustomerByIdAsync(userId);
+        if(customerDto == null)
+        {
+            Console.WriteLine($"No customer exist with that Id {userId}");
+          
+            return;
+        }
+       
+
+
+        var customerOrder = await _logicService.GetCustomerOrdersAsync(userId);
+
+        if (customerOrder == null || customerOrder.Count == 0 )
+        {
+            Console.WriteLine($"No order found for customer ID {userId}.");
+          
+            return;
+        }
+    
+
+        foreach (var order in customerOrder)
+        {
+            Console.WriteLine(new string('-', 98));
+            decimal netAmount = order.TotalAmount - order.FreightPrice;
+            decimal taxPrice = Math.Round(netAmount * 0.25m, 2);
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"\nOrder ID  : {order.Id}");
+            Console.WriteLine($"Order date: {order.OrderDate}");
+            Console.WriteLine($"Shipment    : {order.ShipmentMethod}");
+            Console.WriteLine($"Ship adress : {order.ShippingAddress}");
+            Console.WriteLine($"Ship Zip    : {order.ZipCode}");
+            Console.WriteLine($"Ship City   : {order.City}");
+            Console.WriteLine($"inv address : {order.InvoiceAddress}");
+            Console.WriteLine($"inv Zip     : {order.InvoiceZipCode}");
+            Console.WriteLine($"inv City    : {order.InvoiceCity}");
+            Console.WriteLine($"Payment     : {order.PaymentMethod} ({order.PaymentInfo})");
+            Console.WriteLine($"Freight     : {order.FreightPrice:C}");
+            Console.WriteLine($"Phone       : {order.PhoneNumber}");
+            Console.WriteLine($"TotalPrice  : {order.TotalAmount:C}");
+            Console.WriteLine($"VAT         : {taxPrice:C}");
+
+            Console.ResetColor();
+
+            foreach (var item in order.OrderItems)
+            {
+                Console.ForegroundColor = ConsoleColor.Magenta;
+                Console.WriteLine($"Product ID: {item.ProductId}, Product Name: {item!.Product!.Name}, Quantity: {item.Quantity}, Unit Price: {item.UnitPrice:C} ");
+                Console.ResetColor();
+            }
+            Console.WriteLine(new string('-', 98));
+        }
+
+       
+    }
     private async Task ViewStatsticsMenu() // kolla på statistik
     {
         while (true)
@@ -1423,9 +1486,9 @@ internal class UI
                     if (CancelMethod())
                         break;
                     Console.Write("Name: ");
-                    var name = Console.ReadLine();
+                    var name = Console.ReadLine()!;
                     Console.Write("Description: ");
-                    var description = Console.ReadLine();
+                    var description = Console.ReadLine()!;
                     var addCategory = await _categoryService.AddProductCategoryAsync(new ProductCategory { CategoryName = name, Description = description });
                     Console.WriteLine(addCategory.message);
                     break;
@@ -1440,9 +1503,9 @@ internal class UI
                     Console.Write("Category ID to edit: ");
                     if (!int.TryParse(Console.ReadLine(), out int cid)) break;
                     Console.Write("New Name: ");
-                    name = Console.ReadLine();
+                    name = Console.ReadLine()!;
                     Console.Write("New Description: ");
-                    description = Console.ReadLine();
+                    description = Console.ReadLine()!;
                     var updateCategory = await _categoryService.UpdateProductCategoryAsync(new ProductCategory { Id = cid, CategoryName = name, Description = description });
                     Console.WriteLine(updateCategory.message);
                     break;
@@ -1525,7 +1588,7 @@ internal class UI
                 if (CancelMethod())
                     break;
                 Console.Write($"New Name (current: {dtoProd.Name}): ");
-                input = Console.ReadLine();
+                input = Console.ReadLine()!;
                 if (!string.IsNullOrWhiteSpace(input)) dtoProd.Name = input;
                 break;
 
@@ -1533,7 +1596,7 @@ internal class UI
                 if (CancelMethod())
                     break;
                 Console.Write($"New Description (current: {dtoProd.Description}): ");
-                input = Console.ReadLine();
+                input = Console.ReadLine()!;
                 if (!string.IsNullOrWhiteSpace(input)) dtoProd.Description = input;
                 break;
 
@@ -1541,7 +1604,7 @@ internal class UI
                 if (CancelMethod())
                     break;
                 Console.Write($"New Price (current: {dtoProd.Price}): ");
-                input = Console.ReadLine();
+                input = Console.ReadLine()!;
                 if (decimal.TryParse(input, out var newPrice)) dtoProd.Price = newPrice;
                 break;
 
@@ -1549,7 +1612,7 @@ internal class UI
                 if (CancelMethod())
                     break;
                 Console.Write($"New Stock (current: {dtoProd.Stock}): ");
-                input = Console.ReadLine();
+                input = Console.ReadLine()!;
                 if (int.TryParse(input, out var newStock)) dtoProd.Stock = newStock;
                 break;
 
@@ -1567,7 +1630,7 @@ internal class UI
                 cat.ForEach(c => Console.WriteLine($"{c.Id} - {c.CategoryName}"));
 
                 Console.Write("Choose category ID: ");
-                dtoProd.ProductCategoryId = int.Parse(Console.ReadLine());
+                dtoProd.ProductCategoryId = int.Parse(Console.ReadLine()!);
                 break;
             case '7':
                 if (CancelMethod())
@@ -1577,32 +1640,32 @@ internal class UI
                 Console.WriteLine("\nSuppliers");
                 suppliers.ForEach(s => Console.WriteLine($"{s.Id} - {s.CompanyName}"));
                 Console.Write("Choose supplier ID: ");
-                dtoProd.SupplierId = int.Parse(Console.ReadLine());
+                dtoProd.SupplierId = int.Parse(Console.ReadLine()!);
                 break;
             case '8':
                 if (CancelMethod())
                     break;
                 Console.Write($"New SKU (Current: {dtoProd.SKU}): ");
-                input = Console.ReadLine();
+                input = Console.ReadLine()!;
                 if (!string.IsNullOrWhiteSpace(input)) dtoProd.SKU = input;
                 break;
             case '9':
                 if (CancelMethod())
                     break;
                 Console.Write($"Name ({dtoProd.Name}): ");
-                input = Console.ReadLine();
+                input = Console.ReadLine()!;
                 if (!string.IsNullOrWhiteSpace(input)) dtoProd.Name = input;
 
                 Console.Write($"Description ({dtoProd.Description}): ");
-                input = Console.ReadLine();
+                input = Console.ReadLine()!;
                 if (!string.IsNullOrWhiteSpace(input)) dtoProd.Description = input;
 
                 Console.Write($"Price ({dtoProd.Price}): ");
-                input = Console.ReadLine();
+                input = Console.ReadLine()!;
                 if (decimal.TryParse(input, out newPrice)) dtoProd.Price = newPrice;
 
                 Console.Write($"Stock (Current: {dtoProd.Stock}): ");
-                input = Console.ReadLine();
+                input = Console.ReadLine()!;
                 if (int.TryParse(input, out newStock)) dtoProd.Stock = newStock;
 
                 Console.Write($"Is Active? ({dtoProd.IsActive}) [y/n]: ");
@@ -1611,10 +1674,10 @@ internal class UI
 
 
                 Console.Write($"New Description (current: {dtoProd.Description}): ");
-                input = Console.ReadLine();
+                input = Console.ReadLine()!;
                 if (!string.IsNullOrWhiteSpace(input)) dtoProd.Description = input;
                 Console.Write($"New SKU (Current: {dtoProd.SKU}): ");
-                input = Console.ReadLine();
+                input = Console.ReadLine()!;
                 if (!string.IsNullOrWhiteSpace(input)) dtoProd.SKU = input;
                 break;
             case 'd':
@@ -1683,7 +1746,7 @@ internal class UI
                 break;
             AnsiConsole.MarkupLine("[red]Invalid price. Enter a number > 0[/]");
         } while (true);
-        price = price;
+        //price = price;
 
        
         int stock;
@@ -1751,7 +1814,7 @@ internal class UI
         do 
         {
             Console.Write("SKU: ");
-            inputSku = Console.ReadLine()?.Trim();
+            inputSku = Console.ReadLine()?.Trim()!;
             if (string.IsNullOrWhiteSpace(inputSku))
                 Console.WriteLine("[red]SKU cannot be empty[/]");
         } while (string.IsNullOrWhiteSpace(inputSku));

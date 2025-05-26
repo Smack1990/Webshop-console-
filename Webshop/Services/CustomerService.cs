@@ -36,7 +36,7 @@ internal class CustomerService : ICustomerService
     {
         return await _dbContext.Customers
             .Include(c => c.Cart)
-                .ThenInclude(cart => cart.Items)
+                .ThenInclude(cart => cart!.Items)
                     .ThenInclude(item => item.Product)
             .FirstOrDefaultAsync(c => c.Id == customerId);
     }
@@ -87,5 +87,5 @@ internal class CustomerService : ICustomerService
         return (true, customer.IsAdmin ? $"{customer.FirstName} with Id  {userId} har been updated with Admin rights." : $" {customer.FirstName} with Id {userId} admins righs has been revoked.");
     }
 
-    
+ 
 }

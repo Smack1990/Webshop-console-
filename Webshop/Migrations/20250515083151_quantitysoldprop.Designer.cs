@@ -13,7 +13,7 @@ namespace Webshop.Migrations
 {
     [DbContext(typeof(MyDbContext))]
     [Migration("20250515083151_quantitysoldprop")]
-    partial class quantitysoldprop
+    partial class QuantitySoldProp
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -13,6 +13,10 @@ public class MyDbContext : DbContext
     {
         
     }
+    public MyDbContext()
+    {
+
+    }
     public DbSet<Customer> Customers { get; set; }
     public DbSet<Product> Products { get; set; }
     public DbSet<ProductCategory> ProductCategories { get; set; }

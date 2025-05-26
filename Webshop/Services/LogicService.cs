@@ -18,7 +18,7 @@ namespace Webshop.Services;
 internal class LogicService : ILogicService
 {
     private readonly MyDbContext _dbContext;
-    private Customer _currentCustomer;
+    //private Customer _currentCustomer;
     public LogicService(MyDbContext context)
     {
         _dbContext = context;
@@ -34,7 +34,7 @@ internal class LogicService : ILogicService
 
             var customer = await _dbContext.Customers
                 .Include(c => c.Cart)
-                .ThenInclude(c => c.Items)
+                .ThenInclude(c => c!.Items)
                 .FirstOrDefaultAsync(c => c.Id == customerId);
 
             if (customer == null)
@@ -50,7 +50,7 @@ internal class LogicService : ILogicService
                 return (false, "Not enough stock available");
 
 
-            var existingItem = customer.Cart.Items.FirstOrDefault(i => i.ProductId == productId);
+            var existingItem = customer!.Cart!.Items.FirstOrDefault(i => i.ProductId == productId);
 
             if (existingItem != null)
             {
@@ -85,16 +85,16 @@ internal class LogicService : ILogicService
         {
             var customer = await _dbContext.Customers
                 .Include(c => c.Cart)
-                .ThenInclude(c => c.Items)
+                .ThenInclude(c => c!.Items)
                 .ThenInclude(c => c.Product)
                 .FirstOrDefaultAsync(c => c.Id == customerId);
-            if (customer == null || !customer.Cart.Items.Any()) return null;
+            if (customer == null || !customer!.Cart!.Items.Any()) return null;
 
             var outOfStockItem = customer.Cart.Items
-                   .FirstOrDefault(i => i.Quantity > i.Product.Stock);
+                   .FirstOrDefault(i => i.Quantity > i.Product!.Stock);
             if (outOfStockItem != null)
             {
-                Console.WriteLine($"Cannot checkout: requested quantity ({outOfStockItem.Quantity}) for product '{outOfStockItem.Product.Name}' exceeds stock ({outOfStockItem.Product.Stock}).");
+                Console.WriteLine($"Cannot checkout: requested quantity ({outOfStockItem.Quantity}) for product '{outOfStockItem.Product!.Name}' exceeds stock ({outOfStockItem.Product.Stock}).");
                 return null;
             }
 
@@ -119,18 +119,18 @@ internal class LogicService : ILogicService
                 {
                     ProductId = i.ProductId,
                     Quantity = i.Quantity,
-                    UnitPrice = i.Product.Price
+                    UnitPrice = i.Product!.Price
                 }).ToList()
             };
 
             foreach (var item in customer.Cart.Items)
             {
-                item.Product.Stock -= item.Quantity;
+                item.Product!.Stock -= item.Quantity;
                 item.Product.QuantitySold++;
             }
 
 
-            customer.Cart.Items.Clear();
+            customer!.Cart!.Items.Clear();
 
             _dbContext.Orders.Add(order);
             await _dbContext.SaveChangesAsync();
@@ -150,6 +150,7 @@ internal class LogicService : ILogicService
     //hämta orderhistorik
     public async Task<List<Order>> GetCustomerOrdersAsync(int customerId)
     {
+        
         return await _dbContext.Orders
             .Where(o => o.CustomerId == customerId)
             .Include(o => o.OrderItems)
@@ -163,12 +164,12 @@ internal class LogicService : ILogicService
         {
             var customer = await _dbContext.Customers
                 .Include(c => c.Cart)
-                .ThenInclude(c => c.Items)
+                .ThenInclude(c => c!.Items)
                 .FirstOrDefaultAsync(c => c.Id == customerid);
             if (customer == null)
                 return null;
-            _dbContext.CartItems.RemoveRange(customer.Cart.Items);
-            Console.WriteLine($"Removing {customer.Cart.Items.Count} item(s) from cart.");
+            _dbContext.CartItems.RemoveRange(customer.Cart!.Items);
+            
             await _dbContext.SaveChangesAsync();
             return customer.Cart;
         }
@@ -185,7 +186,7 @@ internal class LogicService : ILogicService
         var cartItem = await _dbContext.CartItems
             .Include(ci => ci.Product)
             .Include(ci => ci.Cart)
-            .FirstOrDefaultAsync(ci => ci.Cart.CustomerId == customerId && ci.ProductId == productId);
+            .FirstOrDefaultAsync(ci => ci.Cart!.CustomerId == customerId && ci.ProductId == productId);
 
         if (cartItem == null)
             return (false, "Cart item not found.");
@@ -199,7 +200,7 @@ internal class LogicService : ILogicService
         }
 
 
-        if (newQuantity > cartItem.Product.Stock)
+        if (newQuantity > cartItem.Product!.Stock)
             return (false, $"Cannot set quantity to {newQuantity}. Only {cartItem.Product.Stock} in stock.");
 
 
@@ -210,77 +211,26 @@ internal class LogicService : ILogicService
    public async Task<int> NumberOfCartItemsAsync(int id)
     {
         var maybeSum = await _dbContext.CartItems
-         .Where(ci => ci.Cart.CustomerId == id)
+         .Where(ci => ci.Cart!.CustomerId == id)
          .Select(ci => (int?)ci.Quantity)   
          .SumAsync();
 
         return maybeSum ?? 0;
     }
 
-    public async Task<List<Order>> GetOrdersFromIdAsync(int userId) //hämta orderhistorik på id
+   
+
+public async Task<Customer> RefreshCartAsync(int id) //uppdatera kundvagnen
     {
         var customer = await _dbContext.Customers
-            .Include(c => c.Orders)
-            .ThenInclude(o => o.OrderItems)
-            .ThenInclude(oi => oi.Product)
-            .FirstOrDefaultAsync(c => c.Id == userId);
+            .Include(c => c.Cart)
+            .ThenInclude(c => c!.Items)
+            .ThenInclude(i => i.Product)
+            .FirstOrDefaultAsync(c => c.Id == id);
 
         if (customer == null)
-        {
-            Console.WriteLine($"Customer with ID {userId} not found.");
-            return new List<Order>();
-        }
+            throw new InvalidOperationException($"Customer with id {id} not found.");
 
-        if (!customer.Orders.Any())
-        {
-            Console.WriteLine($"Customer with ID {userId} has no orders.");
-            return new List<Order>();
-        }
-
-        foreach (var order in customer.Orders)
-        {
-            Console.WriteLine(new string('-', 98));
-            decimal netAmount = order.TotalAmount - order.FreightPrice;
-            decimal taxPrice = Math.Round(netAmount * 0.25m, 2);
-
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"\nOrder ID  : {order.Id}");
-            Console.WriteLine($"Order date: {order.OrderDate}");
-            Console.WriteLine($"Shipment    : {order.ShipmentMethod}");
-            Console.WriteLine($"Ship adress : {order.ShippingAddress}");
-            Console.WriteLine($"Ship Zip    : {order.ZipCode}");
-            Console.WriteLine($"Ship City   : {order.City}");
-            Console.WriteLine($"inv address : {order.InvoiceAddress}");
-            Console.WriteLine($"inv Zip     : {order.InvoiceZipCode}");
-            Console.WriteLine($"inv City    : {order.InvoiceCity}");
-            Console.WriteLine($"Payment     : {order.PaymentMethod} ({order.PaymentInfo})");
-            Console.WriteLine($"Freight     : {order.FreightPrice:C}");
-            Console.WriteLine($"Phone       : {order.PhoneNumber}");
-            Console.WriteLine($"TotalPrice  : {order.TotalAmount:C}");
-            Console.WriteLine($"VAT         : {taxPrice:C}");
-
-            Console.ResetColor();
-
-            foreach (var item in order.OrderItems)
-            {
-                Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine($"Product ID: {item.ProductId}, Product Name: {item.Product.Name}, Quantity: {item.Quantity}, Unit Price: {item.UnitPrice}, ");
-                Console.ResetColor();
-            }
-            Console.WriteLine(new string('-', 75));
-        }
-
-        return customer.Orders.ToList();
-    }
-
-    public async Task<Customer> RefreshCartAsync(int id) //uppdatera kundvagnen
-    {
-
-        return await _dbContext.Customers
-                .Include(c => c.Cart).ThenInclude(c => c.Items).ThenInclude(i => i.Product)
-                .FirstOrDefaultAsync(c => c.Id == _currentCustomer.Id);
-        
-        
-
+        return customer;
     }
 }

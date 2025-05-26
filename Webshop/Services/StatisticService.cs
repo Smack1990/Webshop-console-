@@ -20,19 +20,19 @@ public class StatisticService : IStatisticService
     public async Task<List<(Product Product, int TotalSold)>> GetBestSellingProductsAsync(int topNumber) //Hämtade bästsäljande produkter with total sold amount
     {
         var raw = await _dbContext.OrderItems
-         .GroupBy(o => o.Product)
-         .Select(g => new
-         {
-             Product = g.Key,
-             Total = g.Sum(x => x.Quantity)
-         })
-         .OrderByDescending(x => x.Total)
-         .Take(topNumber)
-         .ToListAsync();  
+            .GroupBy(o => o.Product)
+            .Select(g => new
+            {
+                Product = g.Key,
+                Total = g.Sum(x => x.Quantity)
+            })
+            .OrderByDescending(x => x.Total)
+            .Take(topNumber)
+            .ToListAsync();
 
-        
         return raw
-            .Select(x => (x.Product, x.Total))
+            .Where(x => x.Product != null)
+            .Select(x => (x.Product!, x.Total))
             .ToList();
     }
     public async Task<List<Product>> GetallProductsOrderdBybestsellingAsync(int number) //hämta bästsäljande produkter
@@ -48,7 +48,7 @@ public class StatisticService : IStatisticService
             .Take(number)   
             .ToListAsync();
         return raw
-            .Select(x => x.Product)
+            .Select(x => x.Product!)
             .ToList();
     }
 
@@ -56,14 +56,14 @@ public class StatisticService : IStatisticService
     {
        
         var raw = await _dbContext.OrderItems
-            .Include(oi => oi.Product).ThenInclude(p => p.Category)
-            .GroupBy(oi => oi.Product.Category.CategoryName)
+            .Include(oi => oi.Product).ThenInclude(p => p!.Category)
+            .GroupBy(oi => oi.Product!.Category!.CategoryName)
             .Select(g => new { Category = g.Key, Total = g.Sum(x => x.Quantity) })
             .OrderByDescending(x => x.Total)
             .ToListAsync();
 
    
-        return raw.Select(x => (x.Category, x.Total)).ToList();
+        return raw.Select(x => (x.Category, x.Total)).ToList()!;
     }
 
     public async Task<List<(string? PaymentMethod, int OrderCount)>> MostPopularPaymentMethodAsync() //mest populär kategori
@@ -85,7 +85,7 @@ public class StatisticService : IStatisticService
     {
         var raw = await _dbContext.Orders
             .SelectMany(o => o.OrderItems)
-            .GroupBy(oi => oi.Product.Supplier)
+            .GroupBy(oi => oi.Product!.Supplier)
             .Select(g => new
             {
                 Supplier = g.Key,
@@ -94,7 +94,7 @@ public class StatisticService : IStatisticService
             .OrderByDescending(x => x.TotalSales)
             .ToListAsync();
         return raw
-            .Select(x => (x.Supplier, x.TotalSales))
+            .Select(x => (x.Supplier!, x.TotalSales))
             .ToList();
     }
 

@@ -17,9 +17,9 @@ namespace Webshop.Services;
 internal class ProductService : IProductService
 {
     private readonly MyDbContext _dbContext;
-    private readonly UI.UI _UI;
-    private readonly LogicService _logic;
-    private Customer _currentCustomer;
+
+  
+
     public ProductService(MyDbContext context)
     {
         _dbContext = context;
@@ -36,23 +36,23 @@ internal class ProductService : IProductService
                 Description = p.Description ?? "",
                 Price = p.Price,
                 Stock = p.Stock,
-                SKU = p.SKU,
+                SKU = p.SKU!,
                 CreatedDate = p.CreatedDate,
                 IsActive = p.IsActive,
                 QuantitySold = p.QuantitySold,
-                CategoryName = p.Category.CategoryName,
-                SupplierName = p.Supplier.CompanyName,
+                CategoryName = p.Category!.CategoryName!,
+                SupplierName = p.Supplier!.CompanyName!,
                 ProductCategoryId = p.ProductCategoryId
             })
         .FirstOrDefaultAsync();
     }
-    public async Task<List<ProductDTO?>> GetProductByName(string input)
+    public async Task<List<ProductDTO>> GetProductByName(string input)
     {
         var likeInput = $"%{input}%";
         return await _dbContext.Products
             .Where(p =>
                 EF.Functions.Like(p.Name!, likeInput) ||
-                EF.Functions.Like(p.Supplier.CompanyName, likeInput))
+                EF.Functions.Like(p.Supplier!.CompanyName, likeInput))
             .Select(p => new ProductDTO
             {
                 Id = p.Id,
@@ -60,12 +60,12 @@ internal class ProductService : IProductService
                 Description = p.Description ?? "",
                 Price = p.Price,
                 Stock = p.Stock,
-                SKU = p.SKU,
+                SKU = p.SKU!,
                 CreatedDate = p.CreatedDate,
                 IsActive = p.IsActive,
                 QuantitySold = p.QuantitySold,
-                CategoryName = p.Category.CategoryName,
-                SupplierName = p.Supplier.CompanyName,
+                CategoryName = p.Category!.CategoryName!,
+                SupplierName = p.Supplier!.CompanyName!,
                 ProductCategoryId = p.ProductCategoryId
             })
             .ToListAsync();
@@ -178,12 +178,12 @@ internal class ProductService : IProductService
                 Description = p.Description ?? "",
                 Price = p.Price,
                 Stock = p.Stock,
-                SKU = p.SKU,
+                SKU = p.SKU!,
                 CreatedDate = p.CreatedDate,
                 IsActive = p.IsActive,
                 QuantitySold = p.QuantitySold,
-                CategoryName = p.Category.CategoryName,
-                SupplierName = p.Supplier.CompanyName,
+                CategoryName = p.Category!.CategoryName!,
+                SupplierName = p.Supplier!.CompanyName!,
                 ProductCategoryId = p.ProductCategoryId
 
             })
@@ -206,7 +206,7 @@ internal class ProductService : IProductService
                 IsActive = p.IsActive,
                 ProductCategoryId = p.ProductCategoryId,
                 SupplierId = p.SupplierId,
-                SKU = p.SKU
+                SKU = p.SKU!
             })
             .FirstOrDefaultAsync();
     }
