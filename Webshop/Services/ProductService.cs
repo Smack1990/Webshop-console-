@@ -96,7 +96,7 @@ internal class ProductService : IProductService
             QuantitySold = 0
         };
 
-        // 2) Validate
+       
         if (string.IsNullOrWhiteSpace(product.Name))
             return (false, "Product name is required");
         if (product.Price <= 0)
@@ -104,9 +104,9 @@ internal class ProductService : IProductService
         if (product.Stock < 0)
             return (false, "Stock quantity cannot be negative");
 
-        // (Optionally validate foreign‐keys exist here)
+       
 
-        // 3) Persist
+       
         try
         {
             await _dbContext.Products.AddAsync(product);
@@ -115,7 +115,7 @@ internal class ProductService : IProductService
         }
         catch (DbUpdateException dbEx)
         {
-            // unwrap SQL error message if you like
+            
             var sqlError = dbEx.InnerException?.Message;
             var fullMsg = dbEx.Message + (sqlError != null ? $"\n→ Inner: {sqlError}" : "");
             return (false, $"Error adding product: {fullMsg}");
