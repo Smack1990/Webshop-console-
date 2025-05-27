@@ -1309,7 +1309,7 @@ internal class UI
                     var restult = await _statsService.GetBestSellingProductsAsync(number);
                     foreach (var res in restult)
                     {
-                        Console.WriteLine($"Product: {res.Product.Name}, Quantity Sold: {res.Product.QuantitySold}");
+                        Console.WriteLine($"Product: {res.Product.Name}, Quantity Sold: {res.TotalSold}");
                     }
                     Console.WriteLine("Press any key to continue...");
                     Console.ReadKey(intercept: true);

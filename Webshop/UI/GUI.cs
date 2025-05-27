@@ -42,6 +42,7 @@ internal class GUI
             .HighlightStyle(Style.Parse("cyan"))
             .AddChoices(choices);
 
+
         var selected = AnsiConsole.Prompt(prompt);
 
         char result = string.IsNullOrEmpty(selected)
