@@ -35,7 +35,7 @@ namespace Webshop.Data
             
             var categoriesToSeed = new[]
             {
-                new ProductCategory { CategoryName = "Bikes", Description = "All kinds of bicycles" },
+                new ProductCategory { CategoryName = "MTB", Description = "MTB for all kind of users" },
                 new ProductCategory { CategoryName = "Tools", Description = "Hand and power tools" },
                 new ProductCategory { CategoryName = "Components", Description = "Bicycle components and spare parts" }
             };
@@ -71,7 +71,7 @@ namespace Webshop.Data
             await context.SaveChangesAsync();
 
           
-            var bikesCat = context.ProductCategories.First(c => c.CategoryName == "Bikes");
+            var bikesCat = context.ProductCategories.First(c => c.CategoryName == "MTB");
             var toolsCat = context.ProductCategories.First(c => c.CategoryName == "Tools");
             var compsCat = context.ProductCategories.First(c => c.CategoryName == "Components");
 
@@ -82,7 +82,7 @@ namespace Webshop.Data
             var shimano = context.Suppliers.First(s => s.CompanyName == "Shimano");
             var sram = context.Suppliers.First(s => s.CompanyName == "Sram");
             var vittoria = context.Suppliers.First(s => s.CompanyName == "Vittoria");
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             var productsToSeed = new[]
             {

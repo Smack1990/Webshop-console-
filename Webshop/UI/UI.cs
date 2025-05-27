@@ -1668,14 +1668,12 @@ internal class UI
                 input = Console.ReadLine()!;
                 if (int.TryParse(input, out newStock)) dtoProd.Stock = newStock;
 
-                Console.Write($"Is Active? ({dtoProd.IsActive}) [y/n]: ");
+                Console.Write($"Is Active? ({dtoProd.IsActive}) [y/n]:\n ");
                 key = Console.ReadKey(intercept: true).KeyChar;
                 dtoProd.IsActive = (key == 'y' || key == 'Y');
 
 
-                Console.Write($"New Description (current: {dtoProd.Description}): ");
-                input = Console.ReadLine()!;
-                if (!string.IsNullOrWhiteSpace(input)) dtoProd.Description = input;
+                
                 Console.Write($"New SKU (Current: {dtoProd.SKU}): ");
                 input = Console.ReadLine()!;
                 if (!string.IsNullOrWhiteSpace(input)) dtoProd.SKU = input;
